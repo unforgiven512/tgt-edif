@@ -59,6 +59,18 @@ library_cell atmel_at40k_library[]={
 		" (property MODEL (string \"IBUF\")))))\n",
 		2,
 		(char *[]){"PAD", "Q"} },
+	{ "GCLKBUF", "GCLKBUF", "GCLKBUF",
+		"\t\t(cell GCLKBUF (cellType GENERIC) (view GCLKBUF (viewType NETLIST)"
+		" (interface (port Q (direction OUTPUT)) (port PAD (direction INPUT))"
+		" (property MODEL (string \"GCLKBUF\")))))\n",
+		2,
+		(char *[]){"PAD", "Q"} },
+	{ "RSBUF", "RSBUF", "RSBUF",
+		"\t\t(cell RSBUF (cellType GENERIC) (view RSBUF (viewType NETLIST)"
+		" (interface (port Q (direction OUTPUT)) (port PAD (direction INPUT))"
+		" (property MODEL (string \"RSBUF\")))))\n",
+		2,
+		(char *[]){"PAD", "Q"} },
         { "OBUF", "OBUF", "OBUF",
                 "\t\t(cell OBUF (cellType GENERIC) (view OBUF (viewType NETLIST)"
                 " (interface (port A (direction INPUT)) (port PAD (direction OUTPUT))"

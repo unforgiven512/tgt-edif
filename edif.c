@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.12 2001/07/11 01:52:30 volodya Exp $"
+#ident "$Id: edif.c,v 1.13 2001/07/18 19:20:01 volodya Exp $"
 #endif
 
 /*
@@ -120,7 +120,7 @@ char *pad;
 long i_p=-1;
 if((pad=(char *)ivl_signal_attr(net, "PAD"))!=NULL){
          switch(pad[0]){
-                case 'i':
+                 case 'i':
                          i_p=find_library_cell("IBUF");
                          break;
                  case 'o':
@@ -129,6 +129,12 @@ if((pad=(char *)ivl_signal_attr(net, "PAD"))!=NULL){
                  case 'b':
                          i_p=find_library_cell("BIBUF");
                          break;
+		 case 'c':
+		 	 i_p=find_library_cell("GCLKBUF");
+			 break;
+		 case 'r':
+		 	 i_p=find_library_cell("RSBUF");
+			 break;
                  default:
                          i_p=-1;
                  }
@@ -1008,6 +1014,8 @@ if((pad=(char *)ivl_signal_attr(sig, "PAD"))!=NULL){
 			pad);
 	switch(pad[0]){
 		case 'i':
+		case 'c':
+		case 'r':
 			fprintf(out,"(direction INPUT))\n");
 			break;
 		case 'o':
