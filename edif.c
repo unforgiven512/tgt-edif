@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.14 2001/07/19 02:55:41 volodya Exp $"
+#ident "$Id: edif.c,v 1.15 2001/08/02 22:39:14 volodya Exp $"
 #endif
 
 /*
@@ -48,11 +48,22 @@ typedef struct {
 	char **port_name;
 	} library_cell;
 
+typedef struct {
+	char *key;
+	char *name;
+	library_cell *library;
+	} architecture;
+
 #define TAKEN (void *)0x0000001
 
 #include "atmel_at40k.inc"
 
-library_cell *current_library=atmel_at40k_library;
+architecture arch[]={
+	{"atmel-at40k", "Atmel AT40K devices", atmel_at40k_library},
+	{NULL,NULL,NULL}
+	};
+
+library_cell *current_library=NULL;
 
 void iterate_scope_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope, nexus_if f);
 void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope);
@@ -1353,13 +1364,41 @@ return 0;
 }
 
 
+void list_architectures(void)
+{
+long i;
+fprintf(stderr,"Available architectures are:\n");
+for(i=0;arch[i].key!=NULL;i++)
+	fprintf(stderr,"\t-farch=%s\t%s\n", arch[i].key, arch[i].name);
+}
+
 int target_design(ivl_design_t des)
 {
 const char *path=ivl_design_flag(des, "-o");
 time_t seconds;
 struct tm *tm_time;
 char *module_name;
+char *architecture;
+long i;
 
+architecture=ivl_design_flag(des, "arch");
+if(architecture==NULL){
+	fprintf(stderr,"ERROR: the architecture was not specified\n");
+	list_architectures();
+	return -1;
+	}
+for(i=0;arch[i].key!=NULL;i++){
+	if(!strcmp(arch[i].key, architecture)){
+		fprintf(stderr,"Producing EDIF 2.0.0 output for %s\n", arch[i].name);
+		current_library=arch[i].library;
+		break;
+		}
+	}
+if(arch[i].key==NULL){
+	fprintf(stderr,"ERROR: unknown architecture \"%s\"\n", architecture);
+	list_architectures();
+	return -1;	
+	}
 if(path==0){
 	return -1;
       	}
