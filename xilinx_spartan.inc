@@ -194,7 +194,7 @@ library_cell xilinx_spartan_library[]={
             	" (interface\n"
 		"\t\t\t(port A (direction INPUT))\n"
 		"\t\t\t(port B (direction INPUT))\n"
-		"\t\t\t(port CI (direction INPUT))\n"
+		"\t\t\t(port CIN (direction INPUT))\n"
 		"\t\t\t(port SUM (direction OUTPUT))\n"
 		"\t\t\t(port COUT (direction OUTPUT))\n"
             	"\t\t\t(property MODEL (string \"ADDC\")))\n"
@@ -208,7 +208,7 @@ library_cell xilinx_spartan_library[]={
 		"\t\t\t\t(net sum (joined (portRef SUM) (portRef O (instanceRef sum_cell))))\n"
 		"\t\t\t\t)))\n",
 		5,
-		(char *[]){ "SUM", "COUT", "A", "B", "CI"} } , 
+		(char *[]){ "SUM", "COUT", "A", "B", "CIN"} } , 
 	
 
 	{ NULL, NULL, NULL, NULL, 0, NULL } };
