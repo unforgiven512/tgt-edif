@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.3 2001/07/06 11:16:09 volodya Exp $"
+#ident "$Id: edif.c,v 1.4 2001/07/07 02:16:59 volodya Exp $"
 #endif
 
 /*
@@ -208,7 +208,10 @@ if(!child[i])return -1;
 if(child[i]!='.')return -1;
 i++;
 for(;child[i];i++)
-	if(child[i]=='.')return 1;
+	if(child[i]=='.'){
+		fprintf(stderr,"\timmediate_child(\"%s\", \"%s\")=1\n",parent, child);
+		return 1;
+		}
 return 0;
 }
 
@@ -545,8 +548,7 @@ if((i_p=find_pad_cell(net))>=0){
         fprintf(out,"\t\t\t\t\t(property PinName (string \"%s\"))\n", pad+1);
         fprintf(out,"\t\t\t\t\t)\n"); /* ) for instance */
         fprintf(out,"\t\t\t\t(net (rename %s \"%s\") (joined\n",
-                mangle_edif_name(pad),
-                pad);
+                mangle_edif_name(pad), pad);
         fprintf(out,"\t\t\t\t\t(portRef %s)\n", mangle_edif_name(ivl_signal_attr(net, "PAD")));
         fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef %s))\n",
                 current_library[i_p].port_name[0],
@@ -616,7 +618,7 @@ for(pin=0;pin<ivl_signal_pins(net);pin++){
 	nexuses->data[idx]=nex;
 
 	if(ivl_signal_pins(net)>1)
-		fprintf(out, "\t\t\t\t(net (rename %s_%ld \"%s[%ld]\") (joined\n", 
+		fprintf(out, "\t\t\t\t(net (rename %s_%ld \"%s_pin_%ld\") (joined\n", 
       			mangle_edif_name(ivl_signal_basename(net)),pin,
 			ivl_signal_basename(net),pin);
 		else 
@@ -664,9 +666,9 @@ for(pin=0;pin<ivl_signal_pins(net);pin++){
 				i=find_logic_cell(ivl_logic_type(log));
 				if(i>=0)
 					fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[i].port_name[ivl_nexus_ptr_pin(ptr)], mangle_edif_name(ivl_logic_basename(log)));
-				} else {
-				fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
-					 ivl_logic_name(log), ivl_logic_type(log));
+				        else 
+					fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
+					 	ivl_logic_name(log), ivl_logic_type(log));
 				}	
 		  	} else 
 		if((lpm=ivl_nexus_ptr_lpm(ptr))!=NULL){
