@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.8 2001/07/09 19:30:17 volodya Exp $"
+#ident "$Id: edif.c,v 1.9 2001/07/09 19:31:19 volodya Exp $"
 #endif
 
 /*
@@ -200,12 +200,7 @@ if(!child[i])return -1;
 if(child[i]!='.')return -1;
 i++;
 for(;child[i];i++)
-	if(child[i]=='.'){
-		#if 0
-		fprintf(stderr,"\timmediate_child(\"%s\", \"%s\")=1\n",parent, child);
-		#endif
-		return 1;
-		}
+	if(child[i]=='.')return 1;
 return 0;
 }
 
@@ -392,11 +387,6 @@ static void iterate_lpm_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *ne
 long i;
 long cell_bufz;
 long width=ivl_lpm_width(lpm);
-
-#if 0
-if((immediate_child(ivl_scope_name(current_scope), ivl_lpm_name(lpm))!=0) &&
-   (immediate_child(ivl_signal_name(sig), ivl_lpm_name(lpm))!=0))return;		
-#endif
 
 cell_bufz=find_library_cell("BUFZ");
 if(cell_bufz<0){
@@ -796,23 +786,6 @@ if(portref_count){
 	}
 }
 
-#if 0
-static void show_signal(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_signal_t net)
-{
-long pin;
-ivl_nexus_t nex;
-if(ivl_signal_pins(net)<1)return;
-if((ivl_signal_port(net)==IVL_SIP_NONE) &&
-    (ivl_signal_attr(net, "PAD")==NULL))return; /* ignore non-port signals */
-fprintf(stderr,"  Processing signal %s\n", ivl_signal_name(net));
-
-for(pin=0;pin<ivl_signal_pins(net);pin++){
-	nex=ivl_signal_pin(net, pin);
-	show_nexus(current_scope, nexuses, nex);
-      	}
-}
-#endif
-
 static void output_standard_cells(void)
 {
 long i;
@@ -860,28 +833,6 @@ if(name[i]=='.')i++;
 return name+i;
 }
 
-#if 0
-static int show_scope_as_instance(ivl_scope_t net, ivl_scope_t current_scope)
-{
-char *buf;
-fprintf(stderr,"  Processing scope %s as instance\n", ivl_scope_name(net));
-switch (ivl_scope_type(net)){
-	case IVL_SCT_MODULE:
-	        /* if(!compare_scope_names(ivl_scope_name(current_scope), ivl_scope_basename(net), ivl_scope_name(net)))*/{
-			fprintf(out, "\t\t\t\t(instance (rename %s \"%s\")\n", 
-						mangle_edif_name(ivl_scope_name(net)),
-						ivl_scope_name(net));
-			buf=(char *)mangle_edif_name(ivl_scope_tname(net));
-			fprintf(out, "\t\t\t\t\t(viewRef %s (cellRef %s))\n", buf, buf);
-			fprintf(out, "\t\t\t\t\t)\n"); /* ) of instance */
-			}
-		break;
-	default:
-	}
-return 0;
-}
-
-#endif
 
 typedef struct {
 	ivl_scope_t current_scope;
@@ -961,10 +912,6 @@ switch(ivl_scope_type(net)){
 	    	idx=add_string(cells, mangle_edif_name(ivl_scope_tname(net)));
 	    	if(cells->data[idx]!=NULL)break;
 	    	cells->data[idx]=net; /* mark this scope */
-		#if 0
-	    	/* define children first */
-	    	ivl_scope_children(net, show_scope, 0);
-		#endif
 	    	fprintf(stderr, "Processing module: %s (%u signals, %u logic)\n",
 	    	  	ivl_scope_tname(net), ivl_scope_sigs(net),
 	      	  	ivl_scope_logs(net));
