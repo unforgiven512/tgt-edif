@@ -13,10 +13,10 @@ library_cell atmel_at40k_library[]={
 		(char *[]){ "Q" } } ,
 	{ "NOT" , "INV", "INV",
 		"\t\t(cell INV (cellType GENERIC) (view INV (viewType NETLIST)"
-            	" (interface (port A (direction INPUT)) (port Q (direction OUTPUT))"
+            	" (interface (port A (direction INPUT)) (port QN (direction OUTPUT))"
             	" (property MODEL (string \"INV\")))))\n",
 		2,
-		(char *[]){ "Q", "A"} } ,
+		(char *[]){ "QN", "A"} } ,
 	{ "AND" , "AN2", "AN2",
 		"\t\t(cell AN2 (cellType GENERIC) (view AN2 (viewType NETLIST)"
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT))"

@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.9 2001/07/09 19:31:19 volodya Exp $"
+#ident "$Id: edif.c,v 1.10 2001/07/10 18:28:25 volodya Exp $"
 #endif
 
 /*
@@ -47,6 +47,8 @@ typedef struct {
 	long ports;
 	char **port_name;
 	} library_cell;
+
+#define TAKEN (void *)0x0000001
 
 #include "atmel_at40k.inc"
 
@@ -106,6 +108,7 @@ switch(logic_type){
 		key="ONE";
 		break;
 	default:
+		fprintf(stderr,"Unsupported gate of type %d encountered\n", logic_type); 
 		return -1;
 	}
 return find_library_cell(key);
@@ -211,6 +214,407 @@ fprintf(out, "\t\t\t\t(net (rename %s \"%s\") (joined\n",
 		ivl_nexus_name(nex));
 }
 
+/* this defines iverilog version of standard logic cell using cells from
+   vendor specific library
+*/
+
+/* all generated cell names are in the form of 
+
+    IVERILOG_FUNCTION_size0_size1
+    
+    should never exceed 40 characters 
+*/
+
+char cell_name[40]; 
+
+void define_logic_cell_header(char *name, long pins)
+{
+long i;
+fprintf(out,"\t\t(cell %s (cellType GENERIC) (view %s (viewType NETLIST)\n",
+	name, name);
+fprintf(out,"\t\t\t(interface\n");
+fprintf(out,"\t\t\t\t(port Q (direction OUTPUT))\n");
+for(i=1;i<pins;i++)
+	fprintf(out,"\t\t\t\t(port A%ld (direction INPUT))\n",i);
+fprintf(out,"\t\t\t\t)\n"); /* ) of interface */
+fprintf(out,"\t\t\t(contents\n");
+}
+
+long define_logic_cell(long type, long npins, STRING_CACHE *logic_cells)
+{
+long i, level_pins, rightmost_pin_level, level, cell;
+switch(type){
+	case IVL_LO_AND:
+		/* 0's pin is always used for output */
+		sprintf(cell_name, "IVERILOG_AND_%ld", npins-1);
+		i=add_string(logic_cells, cell_name);
+		if(logic_cells->data[i]!=NULL)return 0;
+		logic_cells->data[i]=TAKEN;
+		define_logic_cell_header(cell_name, npins);
+		level_pins=npins-1;
+		level=0;
+		rightmost_pin_level=0;
+		cell=find_library_cell("AND");
+		if(cell<0){
+			fprintf(stderr,"Could not find definition for AND2 cell, please update your vendor specific library\n");
+			return -1;
+			}
+		do{
+			for(i=0;i<level_pins/2;i++)
+				fprintf(out,"\t\t\t\t(instance AND_%ld_%ld (viewRef %s (cellRef %s)))\n",
+					level, i,
+					current_library[cell].viewref, current_library[cell].cellref);
+			for(i=0;i<level_pins/2;i++){
+				fprintf(out,"\t\t\t\t(net NET_AND_%ld_%ld_A (joined\n", level, i);
+				if(level){
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+						current_library[cell].port_name[0],
+						level-1, 2*i);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+
+				fprintf(out,"\t\t\t\t(net NET_AND_%ld_%ld_B (joined\n", level, i);
+				if(level){
+					if(i<(level_pins/2))
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							level-1, 2*i+1);
+						else
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							rightmost_pin_level, 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+2);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+				}
+			if((level_pins & 1)==0)rightmost_pin_level=level;
+			level_pins=(level_pins/2)+(level_pins & 1);
+			level++;
+			}while(level_pins>1);
+		/* tie the output of the last AND gate into output */
+		fprintf(out,"\t\t\t\t(net NET_AND_Q (joined\n");
+		fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef AND_%ld_0))\n",
+			current_library[cell].port_name[0], level-1);
+		fprintf(out,"\t\t\t\t\t(portRef Q)\n");
+		fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+		fprintf(out,"\t\t\t\t)\n"); /* ) of contents */
+		fprintf(out,"\t\t\t))\n");  /* of view and cell */
+		break;
+	case IVL_LO_BUF:
+		/* no need */
+		break;
+	case IVL_LO_BUFIF0:
+		/* no need */
+		break;
+	case IVL_LO_BUFIF1:
+		/* no need */
+		break;
+	case IVL_LO_BUFZ:
+		/* no need */
+		break;
+	case IVL_LO_NAND:
+		define_logic_cell(IVL_LO_AND, npins, logic_cells);
+		sprintf(cell_name, "IVERILOG_NAND_%ld", npins-1);
+		i=add_string(logic_cells, cell_name);
+		if(logic_cells->data[i]!=NULL)return 0;
+		logic_cells->data[i]=TAKEN;
+		define_logic_cell_header(cell_name, npins);
+		cell=find_library_cell("NOT");
+		if(cell<0){
+			fprintf(stderr,"Could not find cell NOT in vendor specific library\n");
+			return -1;
+			}
+		fprintf(out,"\t\t\t\t(instance AND (viewRef IVERILOG_AND_%ld (cellRef IVERILOG_AND_%ld)))\n",
+			npins-1, npins-1);
+		fprintf(out,"\t\t\t\t(instance NOT (viewRef %s (cellRef %s)))\n",
+			current_library[cell].viewref, current_library[cell].cellref);
+		for(i=1;i<npins;i++)
+			fprintf(out,"\t\t\t\t(net NET_A%ld (joined (portRef A%ld) (portRef A%ld (instanceRef AND))))\n",
+				i,i,i);
+		fprintf(out,"\t\t\t\t(net NET_Q0 (joined (portRef Q (instanceRef AND)) (portRef %s (instanceRef NOT))))\n",
+			current_library[cell].port_name[1]);
+		fprintf(out,"\t\t\t\t(net NET_Q1 (joined (portRef %s (instanceRef NOT)) (portRef Q)))\n",
+			current_library[cell].port_name[0]);
+		fprintf(out,"\t\t\t\t)\n"); /* ) of contents */
+		fprintf(out,"\t\t\t))\n");  /* of view and cell */
+		break;
+	case IVL_LO_NOR:
+		define_logic_cell(IVL_LO_OR, npins, logic_cells);
+		sprintf(cell_name, "IVERILOG_NOR_%ld", npins-1);
+		i=add_string(logic_cells, cell_name);
+		if(logic_cells->data[i]!=NULL)return 0;
+		logic_cells->data[i]=TAKEN;
+		define_logic_cell_header(cell_name, npins);
+		cell=find_library_cell("NOT");
+		if(cell<0){
+			fprintf(stderr,"Could not find cell NOT in vendor specific library\n");
+			return -1;
+			}
+		fprintf(out,"\t\t\t\t(instance OR (viewRef IVERILOG_OR_%ld (cellRef IVERILOG_OR_%ld)))\n",
+			npins-1, npins-1);
+		fprintf(out,"\t\t\t\t(instance NOT (viewRef %s (cellRef %s)))\n",
+			current_library[cell].viewref, current_library[cell].cellref);
+		for(i=1;i<npins;i++)
+			fprintf(out,"\t\t\t\t(net NET_A%ld (joined (portRef A%ld) (portRef A%ld (instanceRef OR))))\n",
+				i,i,i);
+		fprintf(out,"\t\t\t\t(net NET_Q0 (joined (portRef Q (instanceRef OR)) (portRef %s (instanceRef NOT))))\n",
+			current_library[cell].port_name[1]);
+		fprintf(out,"\t\t\t\t(net NET_Q1 (joined (portRef %s (instanceRef NOT)) (portRef Q)))\n",
+			current_library[cell].port_name[0]);
+		fprintf(out,"\t\t\t\t)\n"); /* ) of contents */
+		fprintf(out,"\t\t\t))\n");  /* of view and cell */
+		break;
+	case IVL_LO_NOT:
+		/* no need */
+		break;
+	case IVL_LO_OR:
+		sprintf(cell_name, "IVERILOG_OR_%ld", npins-1);
+		i=add_string(logic_cells, cell_name);
+		if(logic_cells->data[i]!=NULL)return 0;
+		logic_cells->data[i]=TAKEN;
+		define_logic_cell_header(cell_name, npins);
+		level_pins=npins-1;
+		level=0;
+		rightmost_pin_level=0;
+		cell=find_library_cell("OR");
+		if(cell<0){
+			fprintf(stderr,"Could not find definition for OR2 cell, please update your vendor specific library\n");
+			return -1;
+			}
+		do{
+			for(i=0;i<level_pins/2;i++)
+				fprintf(out,"\t\t\t\t(instance OR_%ld_%ld (viewRef %s (cellRef %s)))\n",
+					level, i,
+					current_library[cell].viewref, current_library[cell].cellref);
+			for(i=0;i<level_pins/2;i++){
+				fprintf(out,"\t\t\t\t(net NET_OR_%ld_%ld_A (joined\n", level, i);
+				if(level){
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+						current_library[cell].port_name[0],
+						level-1, 2*i);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+
+				fprintf(out,"\t\t\t\t(net NET_OR_%ld_%ld_B (joined\n", level, i);
+				if(level){
+					if(i<(level_pins/2))
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							level-1, 2*i+1);
+						else
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							rightmost_pin_level, 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+2);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+				}
+			if((level_pins & 1)==0)rightmost_pin_level=level;
+			level_pins=(level_pins/2)+(level_pins & 1);
+			level++;
+			}while(level_pins>1);
+		/* tie the output of the last OR gate into output */
+		fprintf(out,"\t\t\t\t(net NET_OR_Q (joined\n");
+		fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef OR_%ld_0))\n",
+			current_library[cell].port_name[0], level-1);
+		fprintf(out,"\t\t\t\t\t(portRef Q)\n");
+		fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+		fprintf(out,"\t\t\t\t)\n"); /* ) of contents */
+		fprintf(out,"\t\t\t))\n");  /* of view and cell */
+		break;
+	case IVL_LO_XOR:
+		sprintf(cell_name, "IVERILOG_XOR_%ld", npins-1);
+		i=add_string(logic_cells, cell_name);
+		if(logic_cells->data[i]!=NULL)return 0;
+		logic_cells->data[i]=TAKEN;
+		define_logic_cell_header(cell_name, npins);
+		level_pins=npins-1;
+		level=0;
+		rightmost_pin_level=0;
+		cell=find_library_cell("XOR");
+		if(cell<0){
+			fprintf(stderr,"Could not find definition for XOR2 cell, please update your vendor specific library\n");
+			return -1;
+			}
+		do{
+			for(i=0;i<level_pins/2;i++)
+				fprintf(out,"\t\t\t\t(instance XOR_%ld_%ld (viewRef %s (cellRef %s)))\n",
+					level, i,
+					current_library[cell].viewref, current_library[cell].cellref);
+			for(i=0;i<level_pins/2;i++){
+				fprintf(out,"\t\t\t\t(net NET_XOR_%ld_%ld_A (joined\n", level, i);
+				if(level){
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+						current_library[cell].port_name[0],
+						level-1, 2*i);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+						current_library[cell].port_name[1],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+
+				fprintf(out,"\t\t\t\t(net NET_XOR_%ld_%ld_B (joined\n", level, i);
+				if(level){
+					if(i<(level_pins/2))
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							level-1, 2*i+1);
+						else
+						fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+							current_library[cell].port_name[0],
+							rightmost_pin_level, 2*i+1);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					} else {
+					fprintf(out,"\t\t\t\t\t(portRef A%ld)\n", 2*i+2);
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_%ld))\n",
+						current_library[cell].port_name[2],
+						level, i);
+					}
+				fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+				}
+			if((level_pins & 1)==0)rightmost_pin_level=level;
+			level_pins=(level_pins/2)+(level_pins & 1);
+			level++;
+			}while(level_pins>1);
+		/* tie the output of the last XOR gate into output */
+		fprintf(out,"\t\t\t\t(net NET_XOR_Q (joined\n");
+		fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef XOR_%ld_0))\n",
+			current_library[cell].port_name[0], level-1);
+		fprintf(out,"\t\t\t\t\t(portRef Q)\n");
+		fprintf(out,"\t\t\t\t\t))\n"); /* )) of net and joined */
+		fprintf(out,"\t\t\t\t)\n"); /* ) of contents */
+		fprintf(out,"\t\t\t))\n");  /* of view and cell */
+		break;
+	case IVL_LO_PULLDOWN:
+		/* no need */
+		break;
+	case IVL_LO_PULLUP:
+		/* no need */
+		break;
+	default:
+		return -1;
+	}
+return 0;
+}
+
+void show_logic_cell_as_portref(ivl_net_logic_t log, long pin)
+{
+long i;
+switch(ivl_logic_type(log)){
+	case IVL_LO_AND:
+	case IVL_LO_NAND:
+	case IVL_LO_NOR:
+	case IVL_LO_OR:
+	case IVL_LO_XOR:
+		if(pin)
+			fprintf(out,"\t\t\t\t\t(portRef A%ld (instanceRef %s))\n", 
+				pin, mangle_edif_name(ivl_logic_name(log)));
+			else
+			fprintf(out,"\t\t\t\t\t(portRef Q (instanceRef %s))\n", 
+				mangle_edif_name(ivl_logic_name(log)));
+		break;
+	case IVL_LO_BUF:
+	case IVL_LO_BUFIF0:
+	case IVL_LO_BUFIF1:
+	case IVL_LO_BUFZ:
+	case IVL_LO_NOT:
+	case IVL_LO_PULLDOWN:
+	case IVL_LO_PULLUP:
+		i=find_logic_cell(ivl_logic_type(log));
+		if(i>=0)
+			fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", 
+				current_library[i].port_name[pin], mangle_edif_name(ivl_logic_name(log)));
+		        else 
+			fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
+			 	ivl_logic_name(log), ivl_logic_type(log));
+			
+	default:
+	}
+}
+
+static void show_logic(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_net_logic_t net)
+{
+long library_cell;
+char *cell_kind;
+char *name=(char *)ivl_logic_name(net);
+
+switch(ivl_logic_type(net)){
+	case IVL_LO_AND:
+		cell_kind="AND";
+		break;
+	case IVL_LO_NAND:
+		cell_kind="NAND";
+		break;
+	case IVL_LO_NOR:
+		cell_kind="NOR";
+		break;
+	case IVL_LO_OR:
+		cell_kind="OR";
+		break;
+	case IVL_LO_XOR:
+		cell_kind="XOR";
+		break;
+	case IVL_LO_BUF:
+	case IVL_LO_BUFIF0:
+	case IVL_LO_BUFIF1:
+	case IVL_LO_BUFZ:
+	case IVL_LO_NOT:
+	case IVL_LO_PULLDOWN:
+	case IVL_LO_PULLUP:
+		library_cell=find_logic_cell(ivl_logic_type(net));
+		if(library_cell<0){
+			fprintf(stderr,"Standard cell %s is not present in the library, ignoring\n", ivl_logic_name(net));
+			return;
+			}
+		fprintf(out, "\t\t\t\t(instance (rename %s \"%s\")\n",mangle_edif_name(name), name);
+		fprintf(out, "\t\t\t\t\t(viewRef %s (cellRef %s))\n", current_library[library_cell].viewref, current_library[library_cell].cellref );
+		fprintf(out, "\t\t\t\t\t)\n"); /* ) of instance */
+		return;
+	default:
+		return;
+	}
+fprintf(out, "\t\t\t\t(instance (rename %s \"%s\")\n",mangle_edif_name(name), name);
+fprintf(out, "\t\t\t\t\t(viewRef IVERILOG_%s_%d (cellRef IVERILOG_%s_%d))\n", 
+	cell_kind, ivl_logic_pins(net)-1, cell_kind, ivl_logic_pins(net)-1);
+fprintf(out, "\t\t\t\t\t)\n"); /* ) of instance */
+}
 
 
 static void show_lpm_as_portref(ivl_scope_t current_scope, ivl_nexus_t nex, ivl_lpm_t lpm, long *portref_count)
@@ -388,13 +792,8 @@ long i;
 long cell_bufz;
 long width=ivl_lpm_width(lpm);
 
-cell_bufz=find_library_cell("BUFZ");
-if(cell_bufz<0){
-	fprintf(stderr,"Unimplemented library cell BUFZ. Update your vendor specific library.\n");
-	return;
-	}
-
-fprintf(stderr, "show_lpm_as_net: processing %s\n", ivl_lpm_name(lpm));
+fprintf(stderr, "iterate_lpm_over_nexuses: processing %s (type %d)\n", 
+	ivl_lpm_name(lpm), ivl_lpm_type(lpm));
 switch(ivl_lpm_type(lpm)){
 	case IVL_LPM_ADD:
 		for(i=0;i<width;i++){
@@ -607,7 +1006,7 @@ if(ivl_signal_port(sig)!=IVL_SIP_NONE){
 	fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
 	} else
 if((pad=(char *)ivl_signal_attr(sig, "PAD"))!=NULL){
-	fprintf(out, "\t\t\t\t\t(port (rename %s  \"%s\") (property PIN_LOCATION (string \"%s\")) ", 
+	fprintf(out, "\t\t\t\t(port (rename %s  \"%s\") (property PIN_LOCATION (string \"%s\")) ", 
 			mangle_edif_name(pad), 
 			pad,
 			pad);
@@ -697,7 +1096,7 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 	ivl_nexus_ptr_t ptr=ivl_nexus_ptr(nex, idx);
 
 	if((sig=ivl_nexus_ptr_sig(ptr))){
-        	i=compare_scope_names(ivl_scope_name(current_scope),ivl_signal_basename(sig), ivl_signal_name(sig)); 
+        	i=compare_scope_names(ivl_scope_name(current_scope),ivl_signal_basename(sig), ivl_signal_name(sig));  
                 if(i>=0){
 	  		if((i_p=find_pad_cell(sig))>=0){
 				if(!portref_count)start_net(nex);
@@ -726,20 +1125,12 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 					}
 				fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
 				}
-			     }				
-		 	} else 
+			}				
+		 } else 
 	if((log=ivl_nexus_ptr_log(ptr))!=NULL){
-	      /*  if(!compare_scope_names(ivl_scope_name(current_scope), ivl_logic_basename(log), ivl_logic_name(log))) */ {
-			i=find_logic_cell(ivl_logic_type(log));
-			if(i>=0){
-				if(!portref_count)start_net(nex);
-				portref_count++;
-				fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", 
-					current_library[i].port_name[ivl_nexus_ptr_pin(ptr)], mangle_edif_name(ivl_logic_name(log)));
-			        } else 
-				fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
-				 	ivl_logic_name(log), ivl_logic_type(log));
-			}	
+		if(!portref_count)start_net(nex);
+		portref_count++;
+		show_logic_cell_as_portref(log, ivl_nexus_ptr_pin(ptr));
 	  	} else 
 	if((lpm=ivl_nexus_ptr_lpm(ptr))!=NULL){
 		show_lpm_as_portref(current_scope, nex, lpm, &portref_count);
@@ -803,24 +1194,6 @@ for(i=0;i<npins;i++)
 	f(current_scope, nexuses, ivl_logic_pin(net, i));
 }
 
-static void show_logic(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_net_logic_t net)
-{
-long npins;
-long library_cell;
-char *name=(char *)ivl_logic_name(net);
-
-library_cell=find_logic_cell(ivl_logic_type(net));
-if(library_cell<0){
-	fprintf(stderr,"Standard cell %s is not present in the library, ignoring\n", ivl_logic_name(net));
-	return;
-	}
-fprintf(out, "\t\t\t\t(instance (rename %s \"%s\")\n",mangle_edif_name(name), name);
-fprintf(out, "\t\t\t\t\t(viewRef %s (cellRef %s))\n", current_library[library_cell].viewref, current_library[library_cell].cellref );
-fprintf(out, "\t\t\t\t\t)\n"); /* ) of instance */
-
-npins=ivl_logic_pins(net);
-}
-
 /* this function should really be in the main body */
 char *ivl_scope_basename(ivl_scope_t net)
 {
@@ -852,7 +1225,7 @@ long idx,pin;
 ison_s s;
 ivl_nexus_t nex;
 ivl_signal_t sig;
-fprintf(stderr,"  Processing scope %s as instance\n", ivl_scope_name(scope));
+fprintf(stderr,"  Iterating over nexuses from scope %s\n", ivl_scope_name(scope));
 switch (ivl_scope_type(scope)){
 	case IVL_SCT_MODULE:
 		s.current_scope=current_scope;
@@ -881,6 +1254,14 @@ show_scope_instances(s->current_scope, s->nexuses, scope);
 return 0;
 }
 
+
+static int definition_helper(ivl_scope_t scope, STRING_CACHE *cell_definitions)
+{
+long i;
+for(i=0;i<ivl_scope_logs(scope);i++)
+	define_logic_cell(ivl_logic_type(ivl_scope_log(scope, i)), ivl_logic_pins(ivl_scope_log(scope, i)), cell_definitions);
+}
+
 void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope)
 {
 long idx;
@@ -904,7 +1285,7 @@ static int show_scope(ivl_scope_t net, void*x)
 {
 long idx;
 STRING_CACHE *nexuses;
-
+STRING_CACHE *cell_definitions;
 
 
 switch(ivl_scope_type(net)){
@@ -912,6 +1293,9 @@ switch(ivl_scope_type(net)){
 	    	idx=add_string(cells, mangle_edif_name(ivl_scope_tname(net)));
 	    	if(cells->data[idx]!=NULL)break;
 	    	cells->data[idx]=net; /* mark this scope */
+		cell_definitions=new_string_cache();
+		ivl_scope_children(net, definition_helper, cell_definitions);
+		free_string_cache(cell_definitions);
 	    	fprintf(stderr, "Processing module: %s (%u signals, %u logic)\n",
 	    	  	ivl_scope_tname(net), ivl_scope_sigs(net),
 	      	  	ivl_scope_logs(net));
@@ -933,33 +1317,13 @@ switch(ivl_scope_type(net)){
 		/* this only needs to be done for toplevel module - no pads in lowlevel ones */
 		for(idx=0;idx<ivl_scope_sigs(net);idx++)
 			show_signal_as_instance(net, ivl_scope_sig(net, idx));
-		/*
-	    	ivl_scope_children(net, show_scope_as_instance, net);
-		*/
-		
+
 		show_scope_instances(net, nexuses, net);
-		
-		
 		iterate_scope_over_nexuses(net, nexuses, net, show_nexus_as_instance);
-		/*
-            	for (idx=0;idx<ivl_scope_logs(net);idx++)
-            	    	iterate_logic_over_nexuses(net, nexuses, ivl_scope_log(net, idx), show_nexus_as_instance);
-            	for (idx=0;idx<ivl_scope_lpms(net);idx++)
-	            	iterate_lpm_over_nexuses(net, nexuses, ivl_scope_lpm(net, idx), show_nexus_as_instance);
-		*/
 		free_string_cache(nexuses);
 		/* now handle nets */
 		nexuses=new_string_cache();
 		iterate_scope_over_nexuses(net, nexuses, net, show_nexus);
-		/*
-            	for (idx=0;idx<ivl_scope_logs(net);idx++)
-            	    	iterate_logic_over_nexuses(net, nexuses, ivl_scope_log(net, idx), show_nexus);
-            	for (idx=0;idx<ivl_scope_lpms(net);idx++)
-	            	iterate_lpm_over_nexuses(net, nexuses, ivl_scope_lpm(net, idx), show_nexus);
-			
-	    	for (idx=0;idx<ivl_scope_sigs(net);idx++)
-	    	    	show_signal(net, nexuses, ivl_scope_sig(net, idx));
-		*/    
 	    	fprintf(out, "\t\t\t\t)\n"); /* ) of contents */
 	    	fprintf(out, "\t\t\t))\n"); /* ) of cell and view*/
 		free_string_cache(nexuses);
