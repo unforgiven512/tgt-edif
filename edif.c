@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.13 2001/07/18 19:20:01 volodya Exp $"
+#ident "$Id: edif.c,v 1.14 2001/07/19 02:55:41 volodya Exp $"
 #endif
 
 /*
@@ -1262,6 +1262,7 @@ static int definition_helper(ivl_scope_t scope, STRING_CACHE *cell_definitions)
 long i;
 for(i=0;i<ivl_scope_logs(scope);i++)
 	define_logic_cell(ivl_logic_type(ivl_scope_log(scope, i)), ivl_logic_pins(ivl_scope_log(scope, i)), cell_definitions);
+return 0;
 }
 
 void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope)
@@ -1294,9 +1295,12 @@ switch(ivl_scope_type(net)){
 	    	idx=add_string(cells, mangle_edif_name(ivl_scope_tname(net)));
 	    	if(cells->data[idx]!=NULL)break;
 	    	cells->data[idx]=net; /* mark this scope */
+
 		cell_definitions=new_string_cache();
 		ivl_scope_children(net, definition_helper, cell_definitions);
+		definition_helper(net, cell_definitions);
 		free_string_cache(cell_definitions);
+
 	    	fprintf(stderr, "Processing module: %s (%u signals, %u logic)\n",
 	    	  	ivl_scope_tname(net), ivl_scope_sigs(net),
 	      	  	ivl_scope_logs(net));
