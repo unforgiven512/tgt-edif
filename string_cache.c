@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 #include "string_cache.h"
@@ -129,9 +130,32 @@ if(a<1)a=1;
 if(b<1)b=1;
 r=calloc(a,b);
 while(r==NULL){
-	fprintf(stderr,"Failed to allocated %d chunks of %d bytes (%d bytes total)\n", a,b,a*b);
+	fprintf(stderr,"Failed to allocated %ld chunks of %ld bytes (%ld bytes total)\n", a,b,a*b);
 	sleep(1);
 	r=calloc(a,b);
 	}
 return r;
+}
+
+void free_string_cache(STRING_CACHE *sc)
+{
+long i;
+if(sc==NULL)return;
+for(i=0;i<sc->free;i++)
+	free(sc->string[i]);
+free(sc->string);
+sc->string=NULL;
+if(sc->data!=NULL){
+	free(sc->data);
+	sc->data=NULL;
+	}
+if(sc->string_hash!=NULL){
+	free(sc->string_hash);
+	sc->string_hash=NULL;
+	}
+if(sc->next_string!=NULL){
+	free(sc->next_string);
+	sc->next_string=NULL;
+	}
+free(sc);
 }

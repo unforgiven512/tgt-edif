@@ -38,5 +38,6 @@ long lookup_string(STRING_CACHE *sc, char * string);
 long add_string(STRING_CACHE *sc, char *string);
 int valid_id(STRING_CACHE *sc, long string_id);
 void * do_alloc(long, long);
+void free_string_cache(STRING_CACHE *sc);
 
 #endif
