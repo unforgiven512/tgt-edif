@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.15 2001/08/02 22:39:14 volodya Exp $"
+#ident "$Id: edif.c,v 1.16 2001/08/05 09:39:15 volodya Exp $"
 #endif
 
 /*
@@ -57,9 +57,11 @@ typedef struct {
 #define TAKEN (void *)0x0000001
 
 #include "atmel_at40k.inc"
+#include "xilinx_spartan.inc"
 
 architecture arch[]={
 	{"atmel-at40k", "Atmel AT40K devices", atmel_at40k_library},
+	{"xilinx-spartan", "Xilinx Spartan II devices", xilinx_spartan_library},
 	{NULL,NULL,NULL}
 	};
 
