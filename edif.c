@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.10 2001/07/10 18:28:25 volodya Exp $"
+#ident "$Id: edif.c,v 1.11 2001/07/11 01:29:00 volodya Exp $"
 #endif
 
 /*
@@ -792,8 +792,6 @@ long i;
 long cell_bufz;
 long width=ivl_lpm_width(lpm);
 
-fprintf(stderr, "iterate_lpm_over_nexuses: processing %s (type %d)\n", 
-	ivl_lpm_name(lpm), ivl_lpm_type(lpm));
 switch(ivl_lpm_type(lpm)){
 	case IVL_LPM_ADD:
 		for(i=0;i<width;i++){
@@ -832,8 +830,6 @@ static void show_lpm(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t
 long idx,i,i_z,i_b;
 long width=ivl_lpm_width(net);
 char *mangled_name;
-
-fprintf(stderr,"show_lpm: output instance %s\n", ivl_lpm_name(net));
 
 switch(ivl_lpm_type(net)){
 	case IVL_LPM_ADD: 
@@ -1084,7 +1080,6 @@ long portref_count;
 idx=add_string(nexuses, ivl_nexus_name(nex));
 if(nexuses->data[idx]!=NULL)return;
 nexuses->data[idx]=nex;
-fprintf(stderr, "   Processing nexus %s\n", ivl_nexus_name(nex));
 
 portref_count=0;
 
@@ -1225,7 +1220,6 @@ long idx,pin;
 ison_s s;
 ivl_nexus_t nex;
 ivl_signal_t sig;
-fprintf(stderr,"  Iterating over nexuses from scope %s\n", ivl_scope_name(scope));
 switch (ivl_scope_type(scope)){
 	case IVL_SCT_MODULE:
 		s.current_scope=current_scope;
@@ -1271,7 +1265,6 @@ switch (ivl_scope_type(scope)){
 		s.current_scope=current_scope;
 		s.nexuses=nexuses;
 		ivl_scope_children(scope, isi_helper, &s);
-		fprintf(stderr,"** scope %s\n", ivl_scope_name(scope));
             	for (idx=0;idx<ivl_scope_logs(scope);idx++)
             	    	show_logic(scope, nexuses, ivl_scope_log(scope, idx));
             	for (idx=0;idx<ivl_scope_lpms(scope);idx++)

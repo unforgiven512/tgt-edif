@@ -80,8 +80,8 @@ library_cell atmel_at40k_library[]={
                 2,
                 (char *[]){"PAD", "A"} }, */
 	/* instead let us model it as bufif with OE being constant 1 */
-        { "BUFZ", "MY_BUFZ", "MY_BUFZ",
-                "\t\t(cell MY_BUFZ (cellType GENERIC) (view MY_BUFZ (viewType NETLIST)"
+        { "BUFZ", "IVERILOG_MY_BUFZ", "IVERILOG_MY_BUFZ",
+                "\t\t(cell IVERILOG_MY_BUFZ (cellType GENERIC) (view IVERILOG_MY_BUFZ (viewType NETLIST)"
                 "\t\t\t(interface (port A (direction INPUT)) (port Q (direction OUTPUT)))\n"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance B (viewRef BUFZ (cellRef BUFZ)))\n"
