@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.7 2001/07/09 19:20:50 volodya Exp $"
+#ident "$Id: edif.c,v 1.8 2001/07/09 19:30:17 volodya Exp $"
 #endif
 
 /*
@@ -51,6 +51,9 @@ typedef struct {
 #include "atmel_at40k.inc"
 
 library_cell *current_library=atmel_at40k_library;
+
+void iterate_scope_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope, nexus_if f);
+void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope);
 
 long find_library_cell(char *key)
 {
@@ -198,22 +201,28 @@ if(child[i]!='.')return -1;
 i++;
 for(;child[i];i++)
 	if(child[i]=='.'){
+		#if 0
 		fprintf(stderr,"\timmediate_child(\"%s\", \"%s\")=1\n",parent, child);
+		#endif
 		return 1;
 		}
 return 0;
 }
+
+void start_net(ivl_nexus_t nex)
+{
+fprintf(out, "\t\t\t\t(net (rename %s \"%s\") (joined\n", 
+     		mangle_edif_name(ivl_nexus_name(nex)),
+		ivl_nexus_name(nex));
+}
+
+
 
 static void show_lpm_as_portref(ivl_scope_t current_scope, ivl_nexus_t nex, ivl_lpm_t lpm, long *portref_count)
 {
 long i;
 long cell,cell_bufz;
 long width=ivl_lpm_width(lpm);
-
-#if 0
-if((immediate_child(ivl_scope_name(current_scope), ivl_lpm_name(lpm))!=0) &&
-   (immediate_child(ivl_signal_name(sig), ivl_lpm_name(lpm))!=0))return;		
-#endif
 
 cell_bufz=find_library_cell("BUFZ");
 if(cell_bufz<0){
@@ -381,7 +390,7 @@ switch(ivl_lpm_type(lpm)){
 static void iterate_lpm_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t lpm, nexus_if f)
 {
 long i;
-long cell,cell_bufz;
+long cell_bufz;
 long width=ivl_lpm_width(lpm);
 
 #if 0
@@ -515,15 +524,15 @@ switch(ivl_lpm_type(net)){
 				ivl_lpm_name(net), width);
                 	fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
                                         current_library[i].viewref, current_library[i].cellref);
-			fprintf(out,"\t\t\t\t(instance (array (rename BUFZ_%s \"%s\") %d)\n",
+			fprintf(out,"\t\t\t\t(instance (array (rename BUFZ_%s \"%s\") %ld)\n",
 				mangle_edif_name(ivl_lpm_name(net)),
 				ivl_lpm_name(net), width);
 			fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
 				current_library[i_b].viewref, current_library[i_b].cellref);
 			for(idx=0;idx<width;idx++)
-				fprintf(out,"\t\t\t\t(net NET_%s_%d (joined\n"
-					    "\t\t\t\t\t(portRef %s (instanceRef (member %s %d)))\n"
-					    "\t\t\t\t\t(portRef %s (instanceRef (member BUFZ_%s %d)))\n"
+				fprintf(out,"\t\t\t\t(net NET_%s_%ld (joined\n"
+					    "\t\t\t\t\t(portRef %s (instanceRef (member %s %ld)))\n"
+					    "\t\t\t\t\t(portRef %s (instanceRef (member BUFZ_%s %ld)))\n"
 					    "\t\t\t\t\t))\n", 
 					mangle_edif_name(ivl_lpm_name(net)), idx, 
 					current_library[i].port_name[3], mangle_edif_name(ivl_lpm_name(net)), idx, 
@@ -634,9 +643,6 @@ if(nexuses->data[idx]!=NULL)return;
 nexuses->data[idx]=nex;
 for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
      	ivl_net_const_t con;
-        ivl_net_logic_t log;
-        ivl_lpm_t lpm;
-        ivl_signal_t sig;
         ivl_nexus_ptr_t ptr=ivl_nexus_ptr(nex, idx);
         if((con=ivl_nexus_ptr_con(ptr))!=NULL){
         	const char*bits=ivl_const_bits(con);
@@ -644,13 +650,13 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
                 if(bits[pin]=='1'){
 			i=find_library_cell("ONE");
 			if(i>=0)
-                                fprintf(out,"\t\t\t\t(instance ONE_%s_%d (viewRef %s (cellRef %s)))\n",
+                                fprintf(out,"\t\t\t\t(instance ONE_%s_%ld (viewRef %s (cellRef %s)))\n",
       		                                mangle_edif_name(ivl_nexus_name(nex)), idx,
 					current_library[i].viewref, current_library[i].cellref);
                         } else {
 			i=find_library_cell("ZERO");
 			if(i>=0)
-                                fprintf(out,"\t\t\t\t(instance ZERO_%s_%d (viewRef %s (cellRef %s)))\n",
+                                fprintf(out,"\t\t\t\t(instance ZERO_%s_%ld (viewRef %s (cellRef %s)))\n",
       	                                 	mangle_edif_name(ivl_nexus_name(nex)), idx,
 					current_library[i].viewref, current_library[i].cellref);
                         }
@@ -660,10 +666,8 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 
 static void show_signal_as_instance(ivl_scope_t current_scope, ivl_signal_t net)
 {
-long pin,idx;
-long i,i_p;
+long i_p;
 char *pad;
-ivl_nexus_t nex;
 if((i_p=find_pad_cell(net))>=0){
         pad=(char *)ivl_signal_attr(net, "PAD");
         fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
@@ -683,17 +687,9 @@ if((i_p=find_pad_cell(net))>=0){
         }
 }
 
-void start_net(ivl_nexus_t nex)
-{
-fprintf(out, "\t\t\t\t(net (rename %s \"%s\") (joined\n", 
-     		mangle_edif_name(ivl_nexus_name(nex)),
-		ivl_nexus_name(nex));
-}
-
 static void show_nexus(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_nexus_t nex)
 {
 long idx, i, i_p;
-char *pad;
 long portref_count;
 
 idx=add_string(nexuses, ivl_nexus_name(nex));
@@ -766,7 +762,7 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 				if(i>=0){
 					if(!portref_count)start_net(nex);
 					portref_count++;
-					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef ONE_%s_%d))\n",
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef ONE_%s_%ld))\n",
 						current_library[i].port_name[0], mangle_edif_name(ivl_nexus_name(nex)),idx);
 					} else {
 					fprintf(stderr,"Cannot handle consant value '%c': cell ONE has not been found in vendor specific library\n",
@@ -778,7 +774,7 @@ for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 				if(i>=0){
 					if(!portref_count)start_net(nex);
 					portref_count++;
-					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef ZERO_%s_%d))\n",
+					fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef ZERO_%s_%ld))\n",
 						current_library[i].port_name[0], mangle_edif_name(ivl_nexus_name(nex)),idx);
 					} else {
 					fprintf(stderr,"Cannot handle consant value '%c': cell ZERO has not been found in vendor specific library\n",
@@ -800,10 +796,10 @@ if(portref_count){
 	}
 }
 
+#if 0
 static void show_signal(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_signal_t net)
 {
-long pin,idx;
-long i,i_p;
+long pin;
 ivl_nexus_t nex;
 if(ivl_signal_pins(net)<1)return;
 if((ivl_signal_port(net)==IVL_SIP_NONE) &&
@@ -815,6 +811,7 @@ for(pin=0;pin<ivl_signal_pins(net);pin++){
 	show_nexus(current_scope, nexuses, nex);
       	}
 }
+#endif
 
 static void output_standard_cells(void)
 {
@@ -835,13 +832,9 @@ for(i=0;i<npins;i++)
 
 static void show_logic(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_net_logic_t net)
 {
-long npins, idx;
+long npins;
 long library_cell;
 char *name=(char *)ivl_logic_name(net);
-#if 0
-if(compare_scope_names(ivl_scope_name(current_scope), ivl_logic_basename(net), ivl_logic_name(net)))
-      		return;
-#endif
 
 library_cell=find_logic_cell(ivl_logic_type(net));
 if(library_cell<0){
@@ -867,6 +860,7 @@ if(name[i]=='.')i++;
 return name+i;
 }
 
+#if 0
 static int show_scope_as_instance(ivl_scope_t net, ivl_scope_t current_scope)
 {
 char *buf;
@@ -886,6 +880,8 @@ switch (ivl_scope_type(net)){
 	}
 return 0;
 }
+
+#endif
 
 typedef struct {
 	ivl_scope_t current_scope;
