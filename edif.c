@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.2 2001/07/06 03:03:49 volodya Exp $"
+#ident "$Id: edif.c,v 1.3 2001/07/06 11:16:09 volodya Exp $"
 #endif
 
 /*
@@ -36,6 +36,7 @@
 
 static FILE *out=NULL;
 STRING_CACHE *cells=NULL;
+STRING_CACHE *nexuses=NULL;
 
 typedef struct {
 	char *key;
@@ -313,14 +314,6 @@ switch(ivl_lpm_type(lpm)){
 					fprintf(out,"\t\t\t\t\t(portRef D1 (instanceRef %s))\n",
 						mangle_edif_name(ivl_lpm_name(lpm)));
 				} else
-			if(nex==ivl_lpm_select(lpm, 0)){
-				if(width>1)
-					fprintf(out,"\t\t\t\t\t(portRef S (instanceRef (member %s %ld)))\n",
-						mangle_edif_name(ivl_lpm_name(lpm)),i);
-					else
-					fprintf(out,"\t\t\t\t\t(portRef S (instanceRef %s))\n",
-						mangle_edif_name(ivl_lpm_name(lpm)));
-				} else
 			if(nex==ivl_lpm_q(lpm, i)){
 				if(width>1)
 					fprintf(out,"\t\t\t\t\t(portRef Q (instanceRef (member %s %ld)))\n",
@@ -328,7 +321,15 @@ switch(ivl_lpm_type(lpm)){
 					else
 					fprintf(out,"\t\t\t\t\t(portRef Q (instanceRef %s))\n",
 						mangle_edif_name(ivl_lpm_name(lpm)));
-				} 
+				} else 
+                        if(nex==ivl_lpm_select(lpm, 0)){
+                                if(width>1)
+                                        fprintf(out,"\t\t\t\t\t(portRef A (instanceRef (member BUFZ_%s %ld)))\n",
+                                                mangle_edif_name(ivl_lpm_name(lpm)),i);
+                                        else
+                                        fprintf(out,"\t\t\t\t\t(portRef S (instanceRef %s))\n",
+                                                mangle_edif_name(ivl_lpm_name(lpm)));
+                                }
 			}
 		break;
 	default:
@@ -338,7 +339,7 @@ switch(ivl_lpm_type(lpm)){
 
 static void show_lpm(ivl_lpm_t net)
 {
-long idx,i,i_z;
+long idx,i,i_z,i_b;
 long width=ivl_lpm_width(net);
 char *mangled_name;
 
@@ -407,17 +408,36 @@ switch(ivl_lpm_type(net)){
 	case IVL_LPM_MUX: 
 		i=find_library_cell("MUX");
 		if(i<0)break;
+		i_b=find_library_cell("BUFZ");
+		if(i_b<0)break;
 
-		if(width>1)
+		if(width>1){
 			fprintf(out,"\t\t\t\t(instance (array (rename %s \"%s\") %ld)\n",
 				mangle_edif_name(ivl_lpm_name(net)), 
 				ivl_lpm_name(net), width);
-			else
-		fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
+                	fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
+                                        current_library[i].viewref, current_library[i].cellref);
+			fprintf(out,"\t\t\t\t(instance (array (rename BUFZ_%s \"%s\") %d)\n",
+				mangle_edif_name(ivl_lpm_name(net)),
+				ivl_lpm_name(net), width);
+			fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
+				current_library[i_b].viewref, current_library[i_b].cellref);
+			for(idx=0;idx<width;idx++)
+				fprintf(out,"\t\t\t\t(net NET_%s_%d (joined\n"
+					    "\t\t\t\t\t(portRef S (instanceRef (member %s %d)))\n"
+					    "\t\t\t\t\t(portRef Q (instanceRef (member BUFZ_%s %d)))\n"
+					    "\t\t\t\t\t))\n", 
+					mangle_edif_name(ivl_lpm_name(net)), idx, 
+					mangle_edif_name(ivl_lpm_name(net)), idx, 
+					mangle_edif_name(ivl_lpm_name(net)), idx);
+			} else {
+		        fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
 				mangle_edif_name(ivl_lpm_name(net)), 
 				ivl_lpm_name(net));
-		fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
-					current_library[i].viewref, current_library[i].cellref);
+       	         	fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
+                                        current_library[i].viewref, current_library[i].cellref);
+
+			}
 		break;
 	  
 
@@ -508,45 +528,92 @@ if((pad=(char *)ivl_signal_attr(sig, "PAD"))!=NULL){
 	}
 }
 
+
+static void show_signal_as_instance(ivl_scope_t current_scope, ivl_signal_t net)
+{
+long pin,idx;
+long i,i_p;
+char *pad;
+ivl_nexus_t nex;
+if((i_p=find_pad_cell(net))>=0){
+        pad=(char *)ivl_signal_attr(net, "PAD");
+        fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
+                mangle_edif_name(pad),
+                pad);
+        fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s))\n",
+                        current_library[i_p].viewref, current_library[i_p].cellref);
+        fprintf(out,"\t\t\t\t\t(property PinName (string \"%s\"))\n", pad+1);
+        fprintf(out,"\t\t\t\t\t)\n"); /* ) for instance */
+        fprintf(out,"\t\t\t\t(net (rename %s \"%s\") (joined\n",
+                mangle_edif_name(pad),
+                pad);
+        fprintf(out,"\t\t\t\t\t(portRef %s)\n", mangle_edif_name(ivl_signal_attr(net, "PAD")));
+        fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef %s))\n",
+                current_library[i_p].port_name[0],
+                mangle_edif_name(pad));
+        fprintf(out,"\t\t\t\t\t))\n"); /* ) of net and joined*/
+        }
+for(pin=0;pin<ivl_signal_pins(net);pin++){
+        nex=ivl_signal_pin(net, pin);
+        for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
+                ivl_net_const_t con;
+                ivl_net_logic_t log;
+                ivl_lpm_t lpm;
+                ivl_signal_t sig;
+                ivl_nexus_ptr_t ptr=ivl_nexus_ptr(nex, idx);
+                if((con=ivl_nexus_ptr_con(ptr))!=NULL){
+                        const char*bits=ivl_const_bits(con);
+                        unsigned pin=ivl_nexus_ptr_pin(ptr);
+                        if(bits[pin]=='1'){
+                                fprintf(out,"\t\t\t\t(instance ONE_%s_%d (viewRef ONE (cellRef ONE)))\n",
+                                        mangle_edif_name(ivl_nexus_name(nex)),idx);
+                                } else {
+                                fprintf(out,"\t\t\t\t(instance ZERO_%s_%d (viewRef ZERO (cellRef ZERO)))\n",
+                                        mangle_edif_name(ivl_nexus_name(nex)),idx);
+                                }
+                        }
+		} 
+	}
+}
+
+long find_pad_cell(ivl_signal_t net)
+{
+char *pad;
+long i_p=-1;
+if((pad=(char *)ivl_signal_attr(net, "PAD"))!=NULL){
+         switch(pad[0]){
+                case 'i':
+                         i_p=find_library_cell("IBUF");
+                         break;
+                 case 'o':
+                         i_p=find_library_cell("OBUF");
+                         break;
+                 case 'b':
+                         i_p=find_library_cell("BIBUF");
+                         break;
+                 default:
+                         i_p=-1;
+                 }
+	}
+return i_p;
+}
+
 static void show_signal(ivl_scope_t current_scope, ivl_signal_t net)
 {
 long pin,idx;
-long i;
+long i,i_p;
 char *pad;
 ivl_nexus_t nex;
+char s[2000];
 
-if((pad=(char *)ivl_signal_attr(net, "PAD"))!=NULL){
-	fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
-		mangle_edif_name(pad),
-		pad);
-	switch(pad[0]){
-		case 'i':
-			i=find_library_cell("IBUF");
-			break;
-		case 'o':
-			i=find_library_cell("OBUF");
-			break;
-		case 'b':
-			i=find_library_cell("BIBUF");
-			break;
-		default:
-			i=-1;
-		}
-        if(i>=0)fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s))\n",
-                        current_library[i].viewref, current_library[i].cellref);
-	fprintf(out,"\t\t\t\t\t(property PinName (string \"%s\"))\n", pad+1);
-	fprintf(out,"\t\t\t\t\t)\n"); /* ) for instance */
-	fprintf(out,"\t\t\t\t(net (rename %s \"%s\") (joined\n",
-		mangle_edif_name(pad),
-		pad);
-	fprintf(out,"\t\t\t\t\t(portRef %s)\n", mangle_edif_name(ivl_signal_attr(net, "PAD")));
-	fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef %s))\n",
-		current_library[i].port_name[0],
-		mangle_edif_name(pad));
-	fprintf(out,"\t\t\t\t\t))\n"); /* ) of net and joined*/
-	}
-for (pin=0;pin<ivl_signal_pins(net);pin += 1){
+if(ivl_signal_pins(net)<1)return;
+
+for(pin=0;pin<ivl_signal_pins(net);pin++){
 	nex=ivl_signal_pin(net, pin);
+	sprintf(s, "%s %s", ivl_scope_name(current_scope), ivl_nexus_name(nex));
+	idx=add_string(nexuses, s);
+	if(nexuses->data[idx]!=NULL)continue;
+	nexuses->data[idx]=nex;
 
 	if(ivl_signal_pins(net)>1)
 		fprintf(out, "\t\t\t\t(net (rename %s_%ld \"%s[%ld]\") (joined\n", 
@@ -556,10 +623,6 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 		fprintf(out, "\t\t\t\t(net (rename %s \"%s\") (joined\n", 
       			mangle_edif_name(ivl_signal_basename(net)),
 			ivl_signal_basename(net));
-	if(ivl_signal_attr(net, "PAD")!=NULL)
-		fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n",
-			current_library[i].port_name[1],
-			mangle_edif_name(ivl_signal_attr(net, "PAD")));
 
 	for (idx=0;idx<ivl_nexus_ptrs(nex);idx++){
 		ivl_net_const_t con;
@@ -569,55 +632,55 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 		ivl_nexus_ptr_t ptr=ivl_nexus_ptr(nex, idx);
 
 		if((sig=ivl_nexus_ptr_sig(ptr))){
-			if((ivl_signal_port(sig)!=IVL_SIP_NONE)){
-			i=compare_scope_names(ivl_scope_name(current_scope),ivl_signal_basename(sig), ivl_signal_name(sig));
-			if(i>=0){
-				if(ivl_signal_pins(sig)>1)
-					fprintf(out, "\t\t\t\t\t(portRef (member %s %d)\n", 
-			  			mangle_edif_name(ivl_signal_basename(sig)), ivl_nexus_ptr_pin(ptr));
-					else
-					fprintf(out, "\t\t\t\t\t(portRef %s\n", 
-			  			mangle_edif_name(ivl_signal_basename(sig)));
-				if(i>0){
-					fprintf(out, "\t\t\t\t\t\t(instanceRef ");
-					print_signal_scope_name(sig);
-					fprintf(out,")\n");
-					} else 
-				if(ivl_signal_attr(sig, "PAD")!=NULL){
-					fprintf(out, "\t\t\t\t\t\t(property PIN (string \"%s\"))\n", ivl_signal_attr(sig, "PAD"));
+                        i=compare_scope_names(ivl_scope_name(current_scope),ivl_signal_basename(sig), ivl_signal_name(sig));
+                        if(i>=0){
+
+		  		if((i_p=find_pad_cell(sig))>=0)
+       		              		fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n",
+               		              		current_library[i_p].port_name[1],
+               		              		mangle_edif_name(ivl_signal_attr(sig, "PAD")));
+
+				if((ivl_signal_port(sig)!=IVL_SIP_NONE)){
+					if(ivl_signal_pins(sig)>1)
+						fprintf(out, "\t\t\t\t\t(portRef (member %s %d)\n", 
+				  			mangle_edif_name(ivl_signal_basename(sig)), ivl_nexus_ptr_pin(ptr));
+						else
+						fprintf(out, "\t\t\t\t\t(portRef %s\n", 
+				  			mangle_edif_name(ivl_signal_basename(sig)));
+					if(i>0){
+						fprintf(out, "\t\t\t\t\t\t(instanceRef ");
+						print_signal_scope_name(sig);
+						fprintf(out,")\n");
+						} else 
+					if(ivl_signal_attr(sig, "PAD")!=NULL){
+						fprintf(out, "\t\t\t\t\t\t(property PIN (string \"%s\"))\n", ivl_signal_attr(sig, "PAD"));
+						}
+					fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
 					}
-				fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
-				}
 			  }				
-			 } else 
+		 	} else 
 		if((log=ivl_nexus_ptr_log(ptr))!=NULL){			
 		        if(!compare_scope_names(ivl_scope_name(current_scope), ivl_logic_basename(log), ivl_logic_name(log))){
 				i=find_logic_cell(ivl_logic_type(log));
 				if(i>=0)
-					fprintf(out, "\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[i].port_name[ivl_nexus_ptr_pin(ptr)], mangle_edif_name(ivl_logic_basename(log)));
-				}
-			
+					fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[i].port_name[ivl_nexus_ptr_pin(ptr)], mangle_edif_name(ivl_logic_basename(log)));
+				} else {
+				fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
+					 ivl_logic_name(log), ivl_logic_type(log));
+				}	
 		  	} else 
 		if((lpm=ivl_nexus_ptr_lpm(ptr))!=NULL){
-			/*
-		        if(!compare_scope_names(ivl_scope_name(current_scope), ivl_lpm_basename(log), ivl_lpm_name(log))){
-				i=find_lpm_cell(ivl_lpm_type(log));
-				if(i>=0)
-					fprintf(out, "\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[i].port_name[ivl_nexus_ptr_pin(ptr)], mangle_edif_name(ivl_logic_basename(log)));
-				}
-			*/
 			show_lpm_as_portref(current_scope, nex, lpm);
 			} else 
 		if((con=ivl_nexus_ptr_con(ptr))!=NULL){
 			const char*bits=ivl_const_bits(con);
-			unsigned pin=ivl_nexus_ptr_pin(ptr);
 			fprintf(out,"\t\t\t\t\t(portRef Q ");
-			if(bits[pin>>3] & (1<<(pin & 0x7))){
-				fprintf(out,"(instanceRef ONE_%s))\n",
-					mangle_edif_name(ivl_scope_tname(current_scope)));
+			if(bits[ivl_nexus_ptr_pin(ptr)]=='1'){
+				fprintf(out,"(instanceRef ONE_%s_%d))\n",
+					mangle_edif_name(ivl_nexus_name(nex)),idx);
 				} else {
-				fprintf(out,"(instanceRef ZERO_%s))\n",
-					mangle_edif_name(ivl_scope_tname(current_scope)));
+				fprintf(out,"(instanceRef ZERO_%s_%d))\n",
+					mangle_edif_name(ivl_nexus_name(nex)),idx);
 				}
 		 	} else {
 			fprintf(stderr, " unrecognized nexus connection in nexus %s 0x%08x 0x%08x\n", ivl_nexus_name(nex), ((unsigned *)ptr)[0], ((unsigned *)ptr)[1]);
@@ -719,10 +782,8 @@ switch(ivl_scope_type(net)){
 	    	fprintf(out, "\t\t\t\t)\n"); /* ) of interface */
 	    	fprintf(out, "\t\t\t(contents\n");
 	    	/* generate contents here */
-	    	fprintf(out,"\t\t\t\t(instance ONE_%s (viewRef ONE (cellRef ONE)))\n",
-			mangle_edif_name(ivl_scope_tname(net)));
-	    	fprintf(out,"\t\t\t\t(instance ZERO_%s (viewRef ZERO (cellRef ZERO)))\n",
-			mangle_edif_name(ivl_scope_tname(net)));
+		for(idx=0;idx<ivl_scope_sigs(net);idx++)
+			show_signal_as_instance(net, ivl_scope_sig(net, idx));
 	    	ivl_scope_children(net, show_scope_as_instance, net);
             	for (idx=0;idx<ivl_scope_logs(net);idx++)
             	    	show_logic(net, ivl_scope_log(net, idx));
@@ -772,6 +833,7 @@ if(out==0){
       	}
 module_name=strdup(mangle_edif_name(ivl_scope_name(ivl_design_root(des))));
 cells=new_string_cache();
+nexuses=new_string_cache();
 seconds=time(NULL);
 tm_time=localtime(&seconds);
 fprintf(stderr, "Writing to %s\n" , path);

@@ -129,7 +129,7 @@ if(a<1)a=1;
 if(b<1)b=1;
 r=calloc(a,b);
 while(r==NULL){
-	fprintf(stderr,"Failed to allocated %d chunks of %d bytes (%d bytes total)\n", a,b);
+	fprintf(stderr,"Failed to allocated %d chunks of %d bytes (%d bytes total)\n", a,b,a*b);
 	sleep(1);
 	r=calloc(a,b);
 	}
