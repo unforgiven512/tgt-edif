@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.11 2001/07/11 01:29:00 volodya Exp $"
+#ident "$Id: edif.c,v 1.12 2001/07/11 01:52:30 volodya Exp $"
 #endif
 
 /*
@@ -1377,7 +1377,7 @@ fprintf(out,"\t(edifVersion 2 0 0)\n"
 		tm_time->tm_sec);
 fprintf(out,"\t\t\t(program \"iverilog\"\n"
       	    "\t\t\t\t(version \"iverilog %s\")\n"
-	    "\t\t\t\t)\n", "alpha edif output module"); /* replace with real version string later */
+	    "\t\t\t\t)\n", "alpha edif output module, version of Tue Jul 10 21:36:41 2001"); /* replace with real version string later */
 fprintf(out,"\t\t\t)\n"); /* ) of written */		  
 fprintf(out,"\t\t)\n"); /* ) of status */
       
