@@ -80,8 +80,8 @@ library_cell atmel_at40k_library[]={
                 2,
                 (char *[]){"PAD", "A"} }, */
 	/* instead let us model it as bufif with OE being constant 1 */
-        { "BUFZ1", "MY_BUFZ1", "MY_BUFZ1",
-                "\t\t(cell MY_BUFZ1 (cellType GENERIC) (view MY_BUFZ1 (viewType NETLIST)"
+        { "BUFZ", "MY_BUFZ", "MY_BUFZ",
+                "\t\t(cell MY_BUFZ (cellType GENERIC) (view MY_BUFZ (viewType NETLIST)"
                 "\t\t\t(interface (port A (direction INPUT)) (port Q (direction OUTPUT)))\n"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance B (viewRef BUFZ (cellRef BUFZ)))\n"
@@ -89,15 +89,6 @@ library_cell atmel_at40k_library[]={
 		"\t\t\t\t(net A (joined (portRef A) (portRef A (instanceRef B))))\n"
 		"\t\t\t\t(net Q (joined (portRef Q) (portRef Q (instanceRef B))))\n"
 		"\t\t\t\t(net V (joined (portRef Q (instanceRef V)) (portRef OE (instanceRef B))))\n"
-                "\t\t\t\t)))\n",
-                2,
-                (char *[]){"Q", "A"} },
-        { "BUFZ", "MY_BUFZ", "MY_BUFZ",
-                "\t\t(cell MY_BUFZ (cellType RIPPER) (view MY_BUFZ (viewType NETLIST)"
-                "\t\t\t(interface\n"
-		"\t\t\t\t(port A (direction INPUT))\n"
-		"\t\t\t\t(port Q (direction OUTPUT))\n"
-		"\t\t\t\t(joined (portRef A) (portRef Q))\n"
                 "\t\t\t\t)))\n",
                 2,
                 (char *[]){"Q", "A"} },

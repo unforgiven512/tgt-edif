@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 #if !defined(WINNT) && !defined(macintosh)
-#ident "$Id: edif.c,v 1.1 2001/07/05 00:16:33 uid36681 Exp $"
+#ident "$Id: edif.c,v 1.2 2001/07/06 03:03:49 volodya Exp $"
 #endif
 
 /*
@@ -568,7 +568,8 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 		ivl_signal_t sig;
 		ivl_nexus_ptr_t ptr=ivl_nexus_ptr(nex, idx);
 
-		if((sig=ivl_nexus_ptr_sig(ptr))&&(ivl_signal_port(sig)!=IVL_SIP_NONE)){
+		if((sig=ivl_nexus_ptr_sig(ptr))){
+			if((ivl_signal_port(sig)!=IVL_SIP_NONE)){
 			i=compare_scope_names(ivl_scope_name(current_scope),ivl_signal_basename(sig), ivl_signal_name(sig));
 			if(i>=0){
 				if(ivl_signal_pins(sig)>1)
@@ -586,7 +587,8 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 					fprintf(out, "\t\t\t\t\t\t(property PIN (string \"%s\"))\n", ivl_signal_attr(sig, "PAD"));
 					}
 				fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
-				}				
+				}
+			  }				
 			 } else 
 		if((log=ivl_nexus_ptr_log(ptr))!=NULL){			
 		        if(!compare_scope_names(ivl_scope_name(current_scope), ivl_logic_basename(log), ivl_logic_name(log))){
@@ -606,7 +608,7 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 			*/
 			show_lpm_as_portref(current_scope, nex, lpm);
 			} else 
-		if((con=ivl_nexus_ptr_con(ptr))){
+		if((con=ivl_nexus_ptr_con(ptr))!=NULL){
 			const char*bits=ivl_const_bits(con);
 			unsigned pin=ivl_nexus_ptr_pin(ptr);
 			fprintf(out,"\t\t\t\t\t(portRef Q ");
@@ -618,9 +620,11 @@ for (pin=0;pin<ivl_signal_pins(net);pin += 1){
 					mangle_edif_name(ivl_scope_tname(current_scope)));
 				}
 		 	} else {
-			fprintf(stderr, " unrecognized nexus connection in nexus %s\n", ivl_nexus_name(nex));
+			fprintf(stderr, " unrecognized nexus connection in nexus %s 0x%08x 0x%08x\n", ivl_nexus_name(nex), ((unsigned *)ptr)[0], ((unsigned *)ptr)[1]);
 		  	}
-		  		
+/*
+		fprintf(stderr,"Nexus connection (%s) %d 0x%08x 0x%08x\n", ivl_nexus_name(nex), idx,  ((unsigned *)ptr)[0], ((unsigned *)ptr)[1]);  		
+*/
 	    	}
 	fprintf(out,"\t\t\t\t)\n"); /* ) for  joined */
 	if(ivl_signal_attr(net, "PAD")!=NULL)
@@ -770,7 +774,7 @@ module_name=strdup(mangle_edif_name(ivl_scope_name(ivl_design_root(des))));
 cells=new_string_cache();
 seconds=time(NULL);
 tm_time=localtime(&seconds);
-fprintf(stderr, "%s" , path);
+fprintf(stderr, "Writing to %s\n" , path);
 fprintf(out,"(edif (rename %s \"%s\")\n", module_name, ivl_scope_name(ivl_design_root(des)));
 fprintf(out,"\t(edifVersion 2 0 0)\n"
  	    "\t(edifLevel 0)\n"
