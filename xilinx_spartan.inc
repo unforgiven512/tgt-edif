@@ -39,8 +39,8 @@ library_cell xilinx_spartan_library[]={
             	" )\n"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance inv (viewref netlist (cellref LUT1)) (property INIT (string \"1\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef inv))))\n"
-		"\t\t\t\t(net (joined (portRef QN) (portRef O (instanceRef inv))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef inv))))\n"
+		"\t\t\t\t(net qn (joined (portRef QN) (portRef O (instanceRef inv))))\n"
 		"\t\t\t\t)))\n",
 		2,
 		(char *[]){ "QN", "A"} } ,
@@ -49,9 +49,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"8\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -60,9 +60,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"E\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -71,9 +71,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"6\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -82,9 +82,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"9\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -93,9 +93,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"1\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -104,9 +104,9 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port A (direction INPUT)) (port B (direction INPUT)) (port Q (direction OUTPUT)))"
 		"\t\t\t(contents\n"
 		"\t\t\t\t(instance lut2 (viewref netlist (cellref LUT2)) (property INIT (string \"7\")))\n"
-		"\t\t\t\t(net (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
-		"\t\t\t\t(net (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
+		"\t\t\t\t(net a (joined (portRef A) (portRef I0 (instanceRef lut2))))\n"
+		"\t\t\t\t(net b (joined (portRef B) (portRef I1 (instanceRef lut2))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut2))))\n"
 		"\t\t\t\t)))\n",
 		3,
 		(char *[]){ "Q", "A", "B" } } ,
@@ -141,7 +141,19 @@ library_cell xilinx_spartan_library[]={
             	" )))\n",
 		3,
 		(char *[]){ "O", "I", "O" } } , 
-	/* instead let us model it as bufif with OE being constant 1 */
+        { "BIBUF", "OBUFT", "netlist",
+                "\t\t(cell OBUFT (cellType GENERIC) (view netlist (viewType NETLIST)"
+                " (interface (port I (direction INPUT)) (port O (direction OUTPUT)) (port T (direction INPUT))"
+                " (property MODEL (string \"OBUF\")))))\n",
+                3,
+                (char *[]){"O", "I", "T"} },
+        { "BUFT", "BUFT", "netlist",
+                "\t\t(cell BUFT (cellType GENERIC) (view netlist (viewType NETLIST)"
+                " (interface (port I (direction INPUT)) (port O (direction OUTPUT)) (port T (direction INPUT))"
+                " )))\n",
+                3,
+                (char *[]){"O", "I", "T"} },
+	/* instead let us model it as bufif with T being constant 0 */
         { "BUFZ", "IVERILOG_MY_BUFZ", "IVERILOG_MY_BUFZ",
                 "\t\t(cell IVERILOG_MY_BUFZ (cellType GENERIC) (view IVERILOG_MY_BUFZ (viewType NETLIST)"
                 "\t\t\t(interface (port A (direction INPUT)) (port Q (direction OUTPUT)))\n"
@@ -150,26 +162,20 @@ library_cell xilinx_spartan_library[]={
 		"\t\t\t\t(instance V (viewRef netlist (cellRef GND)))\n"
 		"\t\t\t\t(net A (joined (portRef A) (portRef I (instanceRef B))))\n"
 		"\t\t\t\t(net Q (joined (portRef Q) (portRef O (instanceRef B))))\n"
-		"\t\t\t\t(net V (joined (portRef O (instanceRef V)) (portRef T (instanceRef B))))\n"
+		"\t\t\t\t(net V (joined (portRef G (instanceRef V)) (portRef T (instanceRef B))))\n"
                 "\t\t\t\t)))\n",
                 2,
                 (char *[]){"Q", "A"} },
-        { "BIBUF", "OBUFT", "netlist",
-                "\t\t(cell OBUFT (cellType GENERIC) (view netlist (viewType NETLIST)"
-                " (interface (port I (direction INPUT)) (port O (direction OUTPUT)) (port T (direction INPUT))"
-                " (property MODEL (string \"OBUF\")))))\n",
-                3,
-                (char *[]){"O", "I", "T"} },
 	{ "MUX" , "MUX2", "MUX2",
 		"\t\t(cell MUX2 (cellType GENERIC) (view MUX2 (viewType NETLIST)"
             	" (interface (port D0 (direction INPUT)) (port D1 (direction INPUT)) (port S (direction INPUT)) (port Q (direction OUTPUT)))\n"
  		"\t\t\t(contents\n"
-		"\t\t\t\t(instance lut3 (viewRef netlist (cellRef LUT3)) (property INIT (string \"D8\")))"
-		"\t\t\t\t(net d0 (portRef D0) (portRef I1 (instanceRef lut3)))\n"
-		"\t\t\t\t(net d1 (portRef D1) (portRef I2 (instanceRef lut3)))\n"
-		"\t\t\t\t(net s (portRef S) (portRef I0 (instanceRef lut3)))\n"
-		"\t\t\t\t(net q (portRef Q) (portRef O (instanceRef lut3)))\n"
-		"\t\t\t))\n",
+		"\t\t\t\t(instance lut3 (viewRef netlist (cellRef LUT3)) (property INIT (string \"D8\")))\n"
+		"\t\t\t\t(net d0 (joined (portRef D0) (portRef I1 (instanceRef lut3))))\n"
+		"\t\t\t\t(net d1 (joined (portRef D1) (portRef I2 (instanceRef lut3))))\n"
+		"\t\t\t\t(net s (joined (portRef S) (portRef I0 (instanceRef lut3))))\n"
+		"\t\t\t\t(net q (joined (portRef Q) (portRef O (instanceRef lut3))))\n"
+		"\t\t\t)))\n",
 		4,
 		(char *[]){ "Q", "D0", "D1", "S" } } ,
 	{ "DFF" , "FD", "netlist",

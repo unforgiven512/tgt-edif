@@ -16,6 +16,11 @@ Getting tgt-edif to work:
 #
 [-tedif-atmel-at40k]
 <ivl>%B/ivl %[s-s%s] %[N-N%N] %[T-T%T] -tdll -fDLL=%B/edif.tgt -Fsynth -Fsyn-rules -Fcprop -Fnodangle -farch=atmel-at40k -o%o -- -
+#
+#
+#
+[-tedif-xilinx-spartan]
+<ivl>%B/ivl %[s-s%s] %[N-N%N] %[T-T%T] -tdll -fDLL=%B/edif.tgt -Fsynth -Fsyn-rules -Fcprop -Fnodangle -farch=xilinx-spartan -o%o -- -
 
 
 3) Compile and install iverilog.
