@@ -577,14 +577,14 @@ switch(ivl_logic_type(log)){
 	case IVL_LO_PULLDOWN:
 	case IVL_LO_PULLUP:
 		i=find_logic_cell(ivl_logic_type(log));
-		if(i>=0)
-			fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", 
-				current_library[i].port_name[pin], mangle_edif_name(ivl_logic_name(log)));
-		        else 
-			fprintf(stderr,"Unrecognized logic cell %s (type %d)\n",
-			 	ivl_logic_name(log), ivl_logic_type(log));
+		if (i >= 0) {
+			fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[i].port_name[pin], mangle_edif_name(ivl_logic_name(log)));
+		}  else {
+			fprintf(stderr,"Unrecognized logic cell %s (type %d)\n", ivl_logic_name(log), ivl_logic_type(log));
+		}
 			
 	default:
+		break;
 	}
 }
 
@@ -1211,15 +1211,20 @@ for(i=0;i<npins;i++)
 }
 
 /* this function should really be in the main body */
-char *ivl_scope_basename(ivl_scope_t net)
-{
-char *name;
-long i;
-name=(char *)ivl_scope_name(net);
-i=strlen(name)-1;
-while((i>=0)&&(name[i]!='.'))i--;
-if(name[i]=='.')i++;
-return name+i;
+const char *ivl_scope_basename(ivl_scope_t net) {
+	char *name;
+	long i;
+
+	name = (char*)ivl_scope_name(net);
+	i = strlen(name) - 1;
+	while ((i >= 0) && (name[i] != '.')) {
+		i--;
+	}
+	if (name[i] == '.') {
+		i++;
+	}
+
+	return (name + i);
 }
 
 
@@ -1260,39 +1265,45 @@ switch (ivl_scope_type(scope)){
 	            	iterate_lpm_over_nexuses(scope, nexuses, ivl_scope_lpm(scope, idx), f);			
 		break;
 	default:
+		break;
 	}
 }
 
-static int isi_helper(ivl_scope_t scope, ison_s *s)
-{
-show_scope_instances(s->current_scope, s->nexuses, scope);
-return 0;
+static int isi_helper(ivl_scope_t scope, ison_s *s) {
+	show_scope_instances(s->current_scope, s->nexuses, scope);
+
+	return 0;
 }
 
 
-static int definition_helper(ivl_scope_t scope, STRING_CACHE *cell_definitions)
-{
-long i;
-for(i=0;i<ivl_scope_logs(scope);i++)
-	define_logic_cell(ivl_logic_type(ivl_scope_log(scope, i)), ivl_logic_pins(ivl_scope_log(scope, i)), cell_definitions);
-return 0;
+static int definition_helper(ivl_scope_t scope, STRING_CACHE *cell_definitions) {
+	long i;
+	for (i = 0; i < ivl_scope_logs(scope); i++) {
+		define_logic_cell(ivl_logic_type(ivl_scope_log(scope, i)), ivl_logic_pins(ivl_scope_log(scope, i)), cell_definitions);
+	}
+
+	return 0;
 }
 
-void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope)
-{
-long idx;
-ison_s s;
-switch (ivl_scope_type(scope)){
-	case IVL_SCT_MODULE:
-		s.current_scope=current_scope;
-		s.nexuses=nexuses;
-		ivl_scope_children(scope, isi_helper, &s);
-            	for (idx=0;idx<ivl_scope_logs(scope);idx++)
-            	    	show_logic(scope, nexuses, ivl_scope_log(scope, idx));
-            	for (idx=0;idx<ivl_scope_lpms(scope);idx++)
-	            	show_lpm(scope, nexuses, ivl_scope_lpm(scope, idx));
-		break;
-	default:
+void show_scope_instances(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_scope_t scope) {
+	long idx;
+	ison_s s;
+
+	switch (ivl_scope_type(scope)) {
+		case IVL_SCT_MODULE:
+			s.current_scope = current_scope;
+			s.nexuses = nexuses;
+			ivl_scope_children(scope, isi_helper, &s);
+			for (idx = 0; idx < ivl_scope_logs(scope); idx++) {
+				show_logic(scope, nexuses, ivl_scope_log(scope, idx));
+			}
+			for (idx = 0; idx < ivl_scope_lpms(scope); idx++) {
+				show_lpm(scope, nexuses, ivl_scope_lpm(scope, idx));
+			}
+			break;
+
+		default:
+			break;
 	}
 }
 
