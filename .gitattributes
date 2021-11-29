@@ -1,0 +1,10 @@
+#
+# .gitattributes
+#
+
+
+*				text=auto
+
+*.c				eol=lf diff=cpp
+*.h				eol=lf diff=cpp
+*.v				eol=lf
