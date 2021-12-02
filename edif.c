@@ -789,14 +789,10 @@ switch(ivl_lpm_type(lpm)){
                         if(nex==ivl_lpm_select(lpm, 0)){
 				if(!(*portref_count))start_net(nex);
 				(*portref_count)++;
-                                if(width>1)
-                                        fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef (member BUFZ_%s %ld)))\n",
-						current_library[cell_bufz].port_name[1],
-                                                mangle_edif_name(ivl_lpm_name(lpm)),i);
-                                        else
-                                        fprintf(out,"\t\t\t\t\t(portRef %s (instanceRef %s))\n",
-						current_library[cell].port_name[3],
-                                                mangle_edif_name(ivl_lpm_name(lpm)));
+                                if (width > 1)
+                                        fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef (member BUFZ_%s %ld)))\n", current_library[cell_bufz].port_name[1], mangle_edif_name(ivl_lpm_name(lpm)), i);
+                                else
+                                        fprintf(out, "\t\t\t\t\t(portRef %s (instanceRef %s))\n", current_library[cell].port_name[3], mangle_edif_name(ivl_lpm_name(lpm)));
                                 }
 			}
 		break;
@@ -805,72 +801,69 @@ switch(ivl_lpm_type(lpm)){
 	}
 }
 
-static void iterate_lpm_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t lpm, nexus_if f)
-{
-long i;
-long cell_bufz;
-long width=ivl_lpm_width(lpm);
+static void iterate_lpm_over_nexuses(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t lpm, nexus_if f) {
+	long i;
+	long cell_bufz;
+	long width = ivl_lpm_width(lpm);
 
-switch(ivl_lpm_type(lpm)){
-	case IVL_LPM_ADD:
-		for(i=0;i<width;i++){
-			f(current_scope, nexuses, ivl_lpm_data(lpm, i));
-			f(current_scope, nexuses, ivl_lpm_datab(lpm, i));
-			f(current_scope, nexuses, ivl_lpm_q(lpm, i));
+	switch (ivl_lpm_type(lpm)) {
+		case IVL_LPM_ADD:
+			for (i = 0; i < width; i++) {
+				f(current_scope, nexuses, ivl_lpm_data(lpm, i));
+				f(current_scope, nexuses, ivl_lpm_datab(lpm, i));
+				f(current_scope, nexuses, ivl_lpm_q(lpm));//, i));
 			}
-		break;
-	case IVL_LPM_FF:
-		f(current_scope, nexuses, ivl_lpm_clk(lpm));
-		for(i=0;i<width;i++){
-			f(current_scope, nexuses, ivl_lpm_data(lpm, i));
-			f(current_scope, nexuses, ivl_lpm_q(lpm, i));
+			break;
+
+		case IVL_LPM_FF:
+			f(current_scope, nexuses, ivl_lpm_clk(lpm));
+			for (i = 0;i < width; i++) {
+				f(current_scope, nexuses, ivl_lpm_data(lpm, i));
+				f(current_scope, nexuses, ivl_lpm_q(lpm));//, i));
 			}
-		break;
-	case IVL_LPM_MUX:
-		if(ivl_lpm_selects(lpm)!=1){
-			fprintf(stderr,"LPM Multiplexors of more than 2 data are not implemented\n");
-			return;
+			break;
+
+		case IVL_LPM_MUX:
+			if (ivl_lpm_selects(lpm) != 1) {
+				fprintf(stderr, "LPM Multiplexors of more than 2 data are not implemented\n");
+				return;
 			}
-                f(current_scope, nexuses, ivl_lpm_select(lpm, 0));
-		for(i=0;i<width;i++){
-			f(current_scope, nexuses, ivl_lpm_data2(lpm, 0, i));
-			f(current_scope, nexuses, ivl_lpm_data2(lpm, 1, i));
-			f(current_scope, nexuses, ivl_lpm_q(lpm, i));
+			f(current_scope, nexuses, ivl_lpm_select(lpm, 0));
+			for (i = 0; i < width; i++) {
+				f(current_scope, nexuses, ivl_lpm_data2(lpm, 0, i));
+				f(current_scope, nexuses, ivl_lpm_data2(lpm, 1, i));
+				f(current_scope, nexuses, ivl_lpm_q(lpm));//, i));
 			}
-		break;
-	default:
-		fprintf(stderr,"show_lpm_as_portref: Unimplemented lpm device %s\n", ivl_lpm_name(lpm));
+			break;
+
+		default:
+			fprintf(stderr, "show_lpm_as_portref: Unimplemented lpm device %s\n", ivl_lpm_name(lpm));
 	}
 }
 
 
-static void show_lpm(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t net)
-{
-long idx,i,i_z,i_b;
-long width=ivl_lpm_width(net);
-char *mangled_name;
+static void show_lpm(ivl_scope_t current_scope, STRING_CACHE *nexuses, ivl_lpm_t net) {
+	long idx;
+	long i;
+	long i_z;
+	long i_b;
+	long width = ivl_lpm_width(net);
+	char *mangled_name;
 
-switch(ivl_lpm_type(net)){
-	case IVL_LPM_ADD: 
-		i=find_library_cell("ADDC");
-		i_z=find_library_cell("ZERO");
-		if(i<0)break;
-		mangled_name=strdup(mangle_edif_name(ivl_lpm_name(net)));
-		if(width>1)
-			fprintf(out,"\t\t\t\t(instance (array (rename %s \"%s\") %ld)\n",
-				mangled_name,
-				ivl_lpm_name(net), width);
+	switch (ivl_lpm_type(net)) {
+		case IVL_LPM_ADD:
+			i=find_library_cell("ADDC");
+			i_z=find_library_cell("ZERO");
+			if(i<0)break;
+			mangled_name=strdup(mangle_edif_name(ivl_lpm_name(net)));
+			if(width>1)
+				fprintf(out,"\t\t\t\t(instance (array (rename %s \"%s\") %ld)\n", mangled_name, ivl_lpm_name(net), width);
 			else
-			fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n",
-				mangled_name, 
-				ivl_lpm_name(net));
-		fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n",
-					current_library[i].viewref, current_library[i].cellref);
-		fprintf(out,"\t\t\t\t(instance ZERO_%s (viewRef %s (cellRef %s)))\n",
-					mangled_name,
-					current_library[i_z].viewref, current_library[i_z].cellref);
-		/* ground first carry in */
-		fprintf(out,"\t\t\t\t(net NET_%s_0 (joined\n"
+				fprintf(out,"\t\t\t\t(instance (rename %s \"%s\")\n", mangled_name, ivl_lpm_name(net));
+			fprintf(out,"\t\t\t\t\t(viewRef %s (cellRef %s)))\n", current_library[i].viewref, current_library[i].cellref);
+			fprintf(out,"\t\t\t\t(instance ZERO_%s (viewRef %s (cellRef %s)))\n", mangled_name, current_library[i_z].viewref, current_library[i_z].cellref);
+			/* ground first carry in */
+			fprintf(out,"\t\t\t\t(net NET_%s_0 (joined\n"
 				"\t\t\t\t\t(portRef %s (instanceRef ZERO_%s))\n"
 				"\t\t\t\t\t(portRef %s (instanceRef (member %s 0)))\n"
 				"\t\t\t\t\t))\n",
@@ -962,82 +955,81 @@ switch(ivl_lpm_type(net)){
    0 if match
    and 1 if successor */
 
-int compare_scope_names(const char *basename,const char *name,const char *fullname)
-{
-long i,j,k,m;
-for(i=0;basename[i] && fullname[i];i++){
-	if(basename[i]!=fullname[i])return -2;
+int compare_scope_names(const char *basename,const char *name,const char *fullname) {
+	long i,j,k,m;
+
+	for(i=0;basename[i] && fullname[i];i++){
+		if(basename[i]!=fullname[i])return -2;
 	}
-if((fullname[i]!='.')||(basename[i]))return -4;
-k=strlen(name);
-m=strlen(fullname);
-for(j=1;(j<=k) && (j<=m);j++){
-	if(name[k-j]!=fullname[m-j])return -3;
+	if((fullname[i]!='.')||(basename[i]))return -4;
+	k=strlen(name);
+	m=strlen(fullname);
+	for(j=1;(j<=k) && (j<=m);j++){
+		if(name[k-j]!=fullname[m-j])return -3;
 	}
-if(fullname[m-j]!='.')return -1;
-if((m-j)>i)return 1;
-if((m-j)==i)return 0;
-return -1;
+	if(fullname[m-j]!='.')return -1;
+	if((m-j)>i)return 1;
+	if((m-j)==i)return 0;
+
+	return -1;
 }
 
-void print_signal_scope_name(ivl_signal_t sig)
-{
-char *name;
-long i,j;
-name=strdup(ivl_signal_name(sig));
-i=strlen(name);
-j=strlen(ivl_signal_basename(sig));
-if((j+1)<i){
-	name[i-j-1]=0;
-	fprintf(out,"%s", mangle_edif_name(name));
+void print_signal_scope_name(ivl_signal_t sig) {
+	char *name;
+	long i;
+	long j;
+
+	name = strdup(ivl_signal_name(sig));
+	i = strlen(name);
+	j = strlen(ivl_signal_basename(sig));
+	if ((j + 1) < i) {
+		name[i - j - 1] = 0;
+		fprintf(out, "%s", mangle_edif_name(name));
 	}
-free(name);
+	free(name);
 }
 
-static void show_signal_as_interface(ivl_scope_t current_scope, ivl_signal_t sig)
-{
-char *pad;
-if(ivl_signal_port(sig)!=IVL_SIP_NONE){
-	if(ivl_signal_pins(sig)>1)
-		fprintf(out, "\t\t\t\t(port (array (rename %s \"%s\") %d)\n", 
-			mangle_edif_name(ivl_signal_basename(sig)),
-			ivl_signal_basename(sig), ivl_signal_pins(sig));
-		else 
-		fprintf(out, "\t\t\t\t(port (rename %s \"%s\")\n", 
-			mangle_edif_name(ivl_signal_basename(sig)),
-			ivl_signal_basename(sig));
-	switch(ivl_signal_port(sig)){
-		case IVL_SIP_INPUT:
-			fprintf(out, "\t\t\t\t\t(direction INPUT)\n");
-			break;
-		case IVL_SIP_OUTPUT:
-			fprintf(out, "\t\t\t\t\t(direction OUTPUT)\n");
-			break;
-		case IVL_SIP_INOUT:
-			fprintf(out, "\t\t\t\t\t(direction INOUT)\n");
-			break;
-		default:
-		}						
-	fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
-	} else
-if((pad=(char *)ivl_signal_attr(sig, "PAD"))!=NULL){
-	fprintf(out, "\t\t\t\t(port (rename %s  \"%s\") (property PIN_LOCATION (string \"%s\")) ", 
-			mangle_edif_name(pad), 
-			pad,
-			pad);
-	switch(pad[0]){
-		case 'i':
-		case 'c':
-		case 'r':
-			fprintf(out,"(direction INPUT))\n");
-			break;
-		case 'o':
-			fprintf(out,"(direction OUTPUT))\n");
-			break;
-		case 'b':
-			fprintf(out,"(direction INOUT))\n");
-			break;
-		}					
+static void show_signal_as_interface(ivl_scope_t current_scope, ivl_signal_t sig) {
+	char *pad;
+
+	if (ivl_signal_port(sig) != IVL_SIP_NONE) {
+		if (ivl_signal_pins(sig) > 1) {
+			fprintf(out, "\t\t\t\t(port (array (rename %s \"%s\") %d)\n", mangle_edif_name(ivl_signal_basename(sig)), ivl_signal_basename(sig), ivl_signal_pins(sig));
+		} else {
+			fprintf(out, "\t\t\t\t(port (rename %s \"%s\")\n", mangle_edif_name(ivl_signal_basename(sig)), ivl_signal_basename(sig));
+		}
+
+		switch (ivl_signal_port(sig)) {
+			case IVL_SIP_INPUT:
+				fprintf(out, "\t\t\t\t\t(direction INPUT)\n");
+				break;
+			case IVL_SIP_OUTPUT:
+				fprintf(out, "\t\t\t\t\t(direction OUTPUT)\n");
+				break;
+			case IVL_SIP_INOUT:
+				fprintf(out, "\t\t\t\t\t(direction INOUT)\n");
+				break;
+			default:
+				break;
+		}
+		fprintf(out, "\t\t\t\t\t)\n"); /* ) of portRef */
+	} else if ((pad = (char*)ivl_signal_attr(sig, "PAD")) != NULL) {
+		fprintf(out, "\t\t\t\t(port (rename %s  \"%s\") (property PIN_LOCATION (string \"%s\")) ", mangle_edif_name(pad), pad, pad);
+		switch (pad[0]) {
+			case 'i':
+			case 'c':
+			case 'r':
+				fprintf(out, "(direction INPUT))\n");
+				break;
+
+			case 'o':
+				fprintf(out, "(direction OUTPUT))\n");
+				break;
+
+			case 'b':
+				fprintf(out, "(direction INOUT))\n");
+				break;
+		}
 	}
 }
 
