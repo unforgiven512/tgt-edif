@@ -41,21 +41,28 @@ unsigned long string_hash(STRING_CACHE *sc, char *string) {
 	return (a);
 }
 
-void generate_sc_hash(STRING_CACHE *sc)
-{
-long i;
-long hash;
-if(sc->string_hash!=NULL)free(sc->string_hash);
-if(sc->next_string!=NULL)free(sc->next_string);
-sc->string_hash_size=sc->size*2+11;
-sc->string_hash=do_alloc(sc->string_hash_size, sizeof(long));
-sc->next_string=do_alloc(sc->size, sizeof(long));
-memset(sc->string_hash, 0xff, sc->string_hash_size * sizeof(long));
-memset(sc->next_string, 0xff, sc->size * sizeof(long));
-for(i=0;i<sc->free;i++){
-	hash=string_hash(sc, sc->string[i]) % sc->string_hash_size;
-	sc->next_string[i]=sc->string_hash[hash];
-	sc->string_hash[hash]=i;
+void generate_sc_hash(STRING_CACHE *sc) {
+	long i;
+	long hash;
+
+	if (sc->string_hash != NULL) {
+		free(sc->string_hash);
+	}
+
+	if (sc->next_string != NULL) {
+		free(sc->next_string);
+	}
+
+	sc->string_hash_size = sc->size * 2 + 11;
+	sc->string_hash = do_alloc(sc->string_hash_size, sizeof(long));
+	sc->next_string = do_alloc(sc->size, sizeof(long));
+	memset(sc->string_hash, 0xFF, sc->string_hash_size * sizeof(long));
+	memset(sc->next_string, 0xFF, sc->size * sizeof(long));
+
+	for (i = 0; i < sc->free; i++) {
+		hash = string_hash(sc, sc->string[i]) % sc->string_hash_size;
+		sc->next_string[i] = sc->string_hash[hash];
+		sc->string_hash[hash] = i;
 	}
 }
 
@@ -101,23 +108,33 @@ long add_string(STRING_CACHE *sc, char *string) {
 	long i;
 	long hash;
 	void *a;
-	i=lookup_string(sc, string);
-	if(i>=0)return i;
-	if(sc->free>=sc->size){
-		sc->size=sc->size*2+10;
 
-		a=do_alloc(sc->size, sizeof(char *));
-		if(sc->free>0)memcpy(a, sc->string, sc->free * sizeof(char *));
+	i = lookup_string(sc, string);
+
+	if (i >= 0) {
+		return (i);
+	}
+
+	if (sc->free >= sc->size) {
+		sc->size = sc->size * 2 + 10;
+
+		a = do_alloc(sc->size, sizeof(char*));
+		if (sc->free > 0) {
+			memcpy(a, sc->string, sc->free * sizeof(char*));
+		}
 		free(sc->string);
-		sc->string=(char **)a;
+		sc->string = (char**)a;
 
-		a=do_alloc(sc->size, sizeof(void *));
-		if(sc->free>0)memcpy(a, sc->data, sc->free * sizeof(void *));
+		a = do_alloc(sc->size, sizeof(void*));
+		if (sc->free > 0) {
+			memcpy(a, sc->data, sc->free * sizeof(void*));
+		}
 		free(sc->data);
-		sc->data=a;
+		sc->data = a;
 
 		generate_sc_hash(sc);
 	}
+
 	i = sc->free;
 	sc->free++;
 	sc->string[i] = strdup(string);
@@ -163,25 +180,34 @@ void *do_alloc(long a, long b) {
 	return (r);
 }
 
-void free_string_cache(STRING_CACHE *sc)
-{
-long i;
-if(sc==NULL)return;
-for(i=0;i<sc->free;i++)
-	free(sc->string[i]);
-free(sc->string);
-sc->string=NULL;
-if(sc->data!=NULL){
-	free(sc->data);
-	sc->data=NULL;
+void free_string_cache(STRING_CACHE *sc) {
+	long i;
+
+	if (sc == NULL) {
+		return;
 	}
-if(sc->string_hash!=NULL){
-	free(sc->string_hash);
-	sc->string_hash=NULL;
+
+	for (i = 0; i < sc->free; i++) {
+		free(sc->string[i]);
 	}
-if(sc->next_string!=NULL){
-	free(sc->next_string);
-	sc->next_string=NULL;
+
+	free(sc->string);
+	sc->string = NULL;
+
+	if (sc->data != NULL) {
+		free(sc->data);
+		sc->data = NULL;
 	}
-free(sc);
+
+	if (sc->string_hash != NULL) {
+		free(sc->string_hash);
+		sc->string_hash = NULL;
+	}
+
+	if (sc->next_string != NULL) {
+		free(sc->next_string);
+		sc->next_string = NULL;
+	}
+
+	free(sc);
 }

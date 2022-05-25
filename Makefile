@@ -18,56 +18,60 @@
 #    Boston, MA 02111-1307, USA
 #
 #
-#
-SHELL = /bin/sh
 
-VERSION = 0.0
+SHELL := /bin/sh
 
-prefix = /usr/local
-exec_prefix = ${prefix}
-srcdir = .
+VERSION := 0.0.1
 
+prefix      := /usr/local
+exec_prefix := ${prefix}
+srcdir      := .
+bindir      := ${exec_prefix}/bin
+libdir      := ${exec_prefix}/lib
+includedir  := $(prefix)/include
 
-bindir = ${exec_prefix}/bin
-libdir = ${exec_prefix}/lib
-includedir = $(prefix)/include
+CC              := gcc
+CXX             := g++
+INSTALL         := /usr/bin/ginstall -c
+INSTALL_PROGRAM := ${INSTALL}
+INSTALL_DATA    := ${INSTALL} -m 644
 
-CC = gcc
-CXX = c++
-INSTALL = /usr/bin/ginstall -c
-INSTALL_PROGRAM = ${INSTALL}
-INSTALL_DATA = ${INSTALL} -m 644
+CPPFLAGS := -DHAVE_CONFIG_H -fPIC
+CXXFLAGS := -g -O2
+LDFLAGS  :=
 
-CPPFLAGS =  -DHAVE_CONFIG_H -fPIC
-CXXFLAGS = -g -O2
-LDFLAGS = 
 
 all: edif.tgt
 
+
 %.o: %.c
 	@[ -d dep ] || mkdir dep
-	$(CC) -Wall -I$(srcdir)/.. $(CPPFLAGS)  -MD -c $< -o $*.o
+	$(CC) -Wall -I$(srcdir)/.. $(CPPFLAGS) -MD -c $< -o $*.o
 	mv $*.d dep
 
-OBJS = edif.o string_cache.o
+
+OBJS := edif.o string_cache.o
 
 ifeq (no,yes)
-  TGTLDFLAGS=-L.. -livl
-  TGTDEPLIBS=../libivl.a
+TGTLDFLAGS = -L.. -livl
+TGTDEPLIBS = ../libivl.a
 else
-  TGTLDFLAGS=
-  TGTDEPLIBS=
+TGTLDFLAGS =
+TGTDEPLIBS =
 endif
 
 
 edif.tgt: $(OBJS) $(TGTDEPLIBS)
 	$(CC) -shared -o $@ $(OBJS) $(TGTLDFLAGS)
 
+
 clean:
 	rm -f *.o dep/*.d *.bck *.bak core
 
+
 install: all installdirs $(libdir)/ivl/edif.tgt \
 	$(includedir)/vpi_user.h
+
 
 $(libdir)/ivl/edif.tgt: ./edif.tgt
 	$(INSTALL_DATA) ./edif.tgt $(libdir)/ivl/edif.tgt
@@ -75,6 +79,7 @@ $(libdir)/ivl/edif.tgt: ./edif.tgt
 
 installdirs: ../mkinstalldirs
 	$(srcdir)/../mkinstalldirs $(includedir) $(bindir) $(libdir)/ivl
+
 
 uninstall:
 	rm -f $(libdir)/ivl/edif.tgt
