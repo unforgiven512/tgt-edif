@@ -1,4 +1,4 @@
-library_cell xilinx_spartan_library[]={
+library_cell xilinx_spartan_library[] = {
 	/* auxiliary cells */
 	{ "XILINX_LUT1", "LUT1", "netlist",
 		"\t\t(cell LUT1 (celltype GENERIC) (view netlist (viewtype NETLIST)"
@@ -140,7 +140,7 @@ library_cell xilinx_spartan_library[]={
             	" (interface (port I (direction INPUT)) (port T (direction INPUT)) (port O (direction OUTPUT))"
             	" )))\n",
 		3,
-		(char *[]){ "O", "I", "O" } } , 
+		(char *[]){ "O", "I", "O" } } ,
         { "BIBUF", "OBUFT", "netlist",
                 "\t\t(cell OBUFT (cellType GENERIC) (view netlist (viewType NETLIST)"
                 " (interface (port I (direction INPUT)) (port O (direction OUTPUT)) (port T (direction INPUT))"
@@ -208,8 +208,8 @@ library_cell xilinx_spartan_library[]={
 		"\t\t\t\t(net sum (joined (portRef SUM) (portRef O (instanceRef sum_cell))))\n"
 		"\t\t\t\t)))\n",
 		5,
-		(char *[]){ "SUM", "COUT", "A", "B", "CIN"} } , 
-	
+		(char *[]){ "SUM", "COUT", "A", "B", "CIN"} } ,
+
 
 	{ NULL, NULL, NULL, NULL, 0, NULL } };
- 
+

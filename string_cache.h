@@ -1,9 +1,9 @@
-#ifndef __STRING_CACHE_H__
-#define __STRING_CACHE_H__
+#ifndef STRING_CACHE_H_
+#define STRING_CACHE_H_
 
 /*
  * Copyright (c) 2001 Vladimir Dergachev (volodya@users.sourceforge.net)
- *    
+ *
  *    This source code is free software; you can redistribute it
  *    and/or modify it in source code form under the terms of the GNU
  *    General Public License as published by the Free Software
@@ -31,13 +31,15 @@ typedef struct {
 	void **data;
 	long *string_hash;
 	long *next_string;
-	} STRING_CACHE;
-	
-STRING_CACHE * new_string_cache(void);
-long lookup_string(STRING_CACHE *sc, char * string);
+} STRING_CACHE;
+
+
+STRING_CACHE *new_string_cache(void);
+long lookup_string(STRING_CACHE *sc, char *string);
 long add_string(STRING_CACHE *sc, char *string);
 int valid_id(STRING_CACHE *sc, long string_id);
-void * do_alloc(long, long);
+void *do_alloc(long a, long b);
 void free_string_cache(STRING_CACHE *sc);
 
-#endif
+
+#endif	/* !STRING_CACHE_H_ */
